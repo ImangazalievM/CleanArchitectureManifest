@@ -285,7 +285,7 @@ public class ArticleModelToEntityMapper {
 
 #  Перенос на Clean Architecture существующих проектов
 
-#FAQ по Clean Architecture
+# FAQ по Clean Architecture
 
 - **С какого слоя лучше всего начать разработку приложения, если оно разрабатывается с нуля?**
 Ответ
