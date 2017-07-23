@@ -15,7 +15,7 @@
   - [Слой отображения (presentation)](#Слой-отображения-presentation)
     - [View](#view)
     - [Presenter](#presenter)
-    - [Связывание View с Presenter'ом](#Что-такое-clean-architecture)
+    - [Связывание View с Presenter'ом](#Связывание-view-с-presenterом)
     - [Model](#model)
   - [Слой бизнес-логики (domain)](#Слой-бизнес-логики-domain)
     - [Entities](#entities)
