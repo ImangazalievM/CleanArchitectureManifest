@@ -9,21 +9,27 @@
 # Содержание
 
 - Введение
-  - [Что такое Clean Architecture?](#Что-такое-Clean-Architecture)
+  - [Что такое Clean Architecture?](#Что-такое-clean-architecture)
   - [Какие проблемы решает?](#Какие-проблемы-решает)
 - [Слои и сущности](#Слои-и-сущности)
-  - [Слой отображения (presentation)](#Слой-отображения-(presentation))
-    - [View](#View)
-    - [Presenter](#Presenter)
-    - [Связывание View с Presenter'ом](#Что-такое-Clean-Architecture?)
-    - [Model](#Model)
-  - [Слой бизнес-логики (domain)](#)
-  - [Слой работы с данными (data)](#)
+  - [Слой отображения (presentation)](#Слой-отображения-presentation)
+    - [View](#view)
+    - [Presenter](#presenter)
+    - [Связывание View с Presenter'ом](#Что-такое-clean-architecture)
+    - [Model](#model)
+  - [Слой бизнес-логики (domain)](#Слой-бизнес-логики-domain)
+    - [Entities](#entities)
+    - [UseCase](#usecase)
+    - [Interactor](#interactor)
+  - [Слой работы с данными (data)](#Слой-работы-с-данными-data)
+    - [Repository](#repository)
+    - [DataStore](#datastore)
   - [Взаимодействие между слоями](#Взаимодействие-между-слоями)
- - [Дополнительные сущности, используемые на практике](#Дополнительные-сущности,-используемые-на-практике)
-- [Обработка ошибок](#Обработка-ошибок)
+ - [Дополнительные сущности, используемые на практике](#Дополнительные-сущности-используемые-на-практике)
 - [Тестирование](#Тестирование)
-- [FAQ по Clean Architecture](#FAQ-по-Clean-Architecture)
+- [Обработка ошибок](#Обработка-ошибок)
+- [Перенос на Clean Architecture существующих проектов](#Перенос-на-clean-architecture-существующих-проектов)
+- [FAQ по Clean Architecture](#faq-по-clean-architecture)
 
 # Что такое Clean Architecture? 
 
