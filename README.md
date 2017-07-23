@@ -3,7 +3,7 @@
 Здесь вы найдете описание основных принципов и правил, которыми стоит руководствоваться при разработке Android-приложений с использованием чистой архитектуры.
 
 <p align="center">
-    <img src="https://preview.ibb.co/jiNRkQ/Clean_Architecture_Full.png">
+    <img src="https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/TheCleanArchitecture.png">
 </p>
 
 # Содержание
@@ -36,16 +36,18 @@ Clean Achitecture — принцип разработки приложений, 
 # Слои и сущности
 
 <p align="center">
-    <img src="https://preview.ibb.co/cLru5Q/2_Clean_Architecture_Layers.png">
+    <img src="https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/CleanArchitectureLayers.png">
 </p>
 
 Архитектуру Android-приложения, построенную по принципу Clean Architecture можно разделить на три слоя: слой отображения (presentation), слой бизнес-логики (domain), слой работы с данными (data). 
 
 ## Слой бизнес-логики (domain)
 
-[Картинка со структурой]
+<p align="center">
+    <img src="https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DomainLayer.png">
+</p>
 
-Главным слоем в Clean Arcitecture является слой бизнес-логики. Именно он определяет поведение приложения. Данный слой включает в себя три сущности: Entity, Repository, Interactor. В отличие от слоев data и presentation, domain-слой не использует классы из фреймворка Android, ограничиваясь классами из "чистой" Java.
+Главным слоем в Clean Arcitecture является слой бизнес-логики. Именно он определяет поведение приложения. Данный слой включает в себя три сущности: Entity, UseCase, Interactor. В отличие от слоев data и presentation, domain-слой не использует классы из фреймворка Android, ограничиваясь классами из "чистой" Java.
 
 ### Entitities 
 
@@ -76,24 +78,6 @@ public class ArticleEntity {
   public String getArticleUrl() {
       return articleUrl;
   }
-  
-}
-```
-
-### Repository
-
-**Repository** - представляет из себя интерфейс, с которым работает UseCase. В нем описывается какие данные хочет получать UseCase от внешних слоев. В приложении может быть несколько репозиториев, в зависимости от задачи. Например, если мы делаем  новостное приложение, репозиторий работающий со статьями может называться ArticleRepository. а репозиторий для работы с комментариями CommentRepository. Пример репозитория, работающего со статьями:
-
-```java
-public interface ArticleRepository {
-
-  Single<ArticleEntity> getArticle(String articleId);
-
-  Single<List<ArticleEntity>> getLastNews();
-  
-  Single<List<ArticleEntity>> getCategoryArticles(String categoryId);
-  
-  Single<List<ArticleEntity>> getRelatedPosts(String articleId);
   
 }
 ```
@@ -145,7 +129,9 @@ public class ArticleDetailInteractor {
 
 Для более удобной связки View и Presenter мы будем использовать библиотеку [Moxy](https://github.com/Arello-Mobile/Moxy). Она помогает решить многие проблемы, связанные с жизненным циклом Activity или Fragment'а. Moxy имеет базовые классы, такие как ```MvpView``` и ```MvpPresenter``` от которых должны наследоваться наши View и Presenter. Для избежания написания большого количества кода по связыванию View и Presenter, Moxy использует кодогенерацию. Для правильной работы кодогенерации мы должны использовать специальные аннотации, которые предоставляет нам Moxy. Более подробную информацию о библиотеке можно найти [здесь](https://habrahabr.ru/post/276189/).
 
-[Картинка со структурой]
+<p align="center">
+    <img src="https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png">
+</p>
 
 ### View
 
@@ -237,14 +223,35 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 
 ## Слой работы с данными (data)
 
-[Картинка со структурой]
+<p align="center">
+    <img src="https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DataLayer.png">
+</p>
 
 Мостом между слоями data и domain является интерфейс Repository. Сам интерфейс находится в слое domain, а уже реализация располагается в слое data.
 
-- DataSource (БД, файлы, сеть, кеш в оперативной памяти)
+### Repository
+
+**Repository** - представляет из себя интерфейс, с которым работает UseCase. В нем описывается какие данные хочет получать UseCase от внешних слоев. В приложении может быть несколько репозиториев, в зависимости от задачи. Например, если мы делаем  новостное приложение, репозиторий работающий со статьями может называться ArticleRepository. а репозиторий для работы с комментариями CommentRepository. Пример репозитория, работающего со статьями:
+
+```java
+public interface ArticleRepository {
+
+  Single<ArticleEntity> getArticle(String articleId);
+
+  Single<List<ArticleEntity>> getLastNews();
+  
+  Single<List<ArticleEntity>> getCategoryArticles(String categoryId);
+  
+  Single<List<ArticleEntity>> getRelatedPosts(String articleId);
+  
+}
+```
+
+### DataSource
+
+(БД, файлы, сеть, кеш в оперативной памяти)
 
 ## Разбиение на пакеты
-
 
 
 ## Взаимодействие между слоями
