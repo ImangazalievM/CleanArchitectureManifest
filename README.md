@@ -287,7 +287,7 @@ public interface ArticleRepository {
 
 Пример разбиения по типу классов:
 
-```java
+```
 app(module)
 |
 |----data
@@ -388,13 +388,13 @@ public class ArticleModelToEntityMapper {
 
 # FAQ по Clean Architecture
 
-- **Стоит ли переписывать весь проект при переносе проекта на Clean Architecture?**
+### Стоит ли переписывать весь проект при переносе проекта на Clean Architecture?
 
 Наверное, нет однозначного ответа на этот вопрос. Если проект большой и переход на Clean Architecture может длительный промежуток времени, то лучше переписывать код постепенно, используя подход, который мы описали выше. Если же проект простой и состоит из 2-3 экранов, а сроки не поджимают, то вы можете попробовать переписать проект с нуля.
 
 В конце хочется привести поучительную историю про Netscape, который переписывали с нуля больше, чем три года - [Things You Should Never Do, Part I](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/)
 
-- **Нужно ли создавать интерфейсы для классов Presenter и Interactor для улучшения тестируемости кода?**
+### Нужно ли создавать интерфейсы для классов Presenter и Interactor для улучшения тестируемости кода?
 
 Пример Presenter'а с интерфейсом:
 
@@ -421,7 +421,7 @@ public class LoginPresenterImpl implements LoginPresenter {
 - [Франкен-код или франкен-дизайн](https://plus.google.com/u/0/+SergeyTeplyakov/posts/gRaqrqaiGbe)
 - [Управление зависимостями](http://sergeyteplyakov.blogspot.ru/2012/11/blog-post.html)
 
-- **Нужно ли создавать отдельный класс Component для каждого Presenter'а?**
+### Нужно ли создавать отдельный класс Component для каждого Presenter'а?
 
 [раздел на доработке]
 
@@ -430,7 +430,7 @@ public class LoginPresenterImpl implements LoginPresenter {
 
 Объект класса ```ApplicationComponent``` является общим для всего приложения, однако в случае, когда вам нужны специфические для данного Presenter'а классы, вы можете создать компонент специально для этого Presenter'а, например, ArticlesListPresenterComponent.
 
-- **Есть ли какие-нибудь правила по именованию методов View и Presenter'а?**
+### Есть ли какие-нибудь правила по именованию методов View и Presenter'а?
 
 Мы рекомендуем придерживаться следующего соглашения:
 
