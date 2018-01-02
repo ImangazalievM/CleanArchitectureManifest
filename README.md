@@ -645,9 +645,7 @@ long provideUserId() {
 
 ```java
 @Inject
-public UserFollowersPresenter(ArticleDetailsInteractor interactor, 
-						    @ArticleId long articleId,
-                              @UserId long userId) 
+public UserFollowersPresenter(ArticleDetailsInteractor interactor, @ArticleId long articleId, @UserId long userId) 
 ```
 
 Готово. Теперь Dagger сможет верно расставить аргументы в конструктор.
