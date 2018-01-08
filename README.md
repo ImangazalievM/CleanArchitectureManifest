@@ -184,8 +184,7 @@ public class OrderInteractor {
             orderResultlistener.onError(new InsufficientFundsException());
         }
     }
-
-
+```
 
 ### Слой работы с данными (Data)
 
@@ -199,7 +198,7 @@ public class OrderInteractor {
 
 **Repository** - представляет из себя интерфейс, с которым работает Interactor. В нем описывается какие данные хочет получать Interactor от внешних слоев. В приложении может быть несколько репозиториев, в зависимости от задачи. Например, если мы делаем  новостное приложение, репозиторий работающий со статьями может называться ArticleRepository, а репозиторий для работы с комментариями CommentRepository. Пример репозитория, работающего со статьями:
 
-​```java
+```java
 public interface ArticleRepository {
 
   Single<ArticleEntity> getArticle(String articleId);
@@ -355,8 +354,6 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 
 
 
-
-
 Ниже представлен пример разбиения пакетов по фичам чат-приложения: 
 
 ```
@@ -366,34 +363,55 @@ com.mydomain
 |     |---- database
 |     |---- filesystem
 |     |---- network
+|     |     |---- ChatApiService
 |     |---- repositories
+|     |     |---- ChatRepositoryImpl
 | 
 |---- domain
 |     |---- global
 |     |     |---- models
+|     |     |     |---- Chat
+|     |     |     |---- Message
+|     |     |     |---- User
 |     |     |---- repositories
-|     |---- relist
+|     |     |     |---- ChatRepository
 |     |---- chatdetails
+|     |     |---- ChatDetailsInteractor
+|     |---- chatslist
+|     |     |---- ChatListInteractor
 |
 |---- presentation
 |     |---- mvp
 |     |     |---- global
 |     |     |     |---- routing
-|     |     |---- chatslist
 |     |     |---- chatsdetails
+|     |     |     |---- ChatDetailsPresenter
+|     |     |     |---- ChatDetailsView
+|     |     |---- chatslist
+|     |     |     |---- ChatListPresenter
+|     |     |     |---- ChatListView
 |     |---- ui
 |     |     |---- global
 |     |     |     |---- views
 |     |     |     |---- utils
-|     |     |---- chatslist
 |     |     |---- chatdetails
+|     |     |     |---- ChatDetilsActivity
+|     |     |---- chatslist
+|     |     |     |---- ChatListActivity
 |     
 |---- di
-|     |---- modules
-|     |---- scopes
-|     |---- modifiers
+|     |---- global
+|     |     |---- modules
+|     |     |---- scopes
+|     |     |---- modifiers
+|     |     |---- ApplicationComponent
+|     |---- chatdetails
+|     |     |---- ChatDetailsComponent
+|     |     |---- ChatDetailsModule
+|     |---- chatslist
+|     |     |---- ChatListComponent
 ```
-Прежде чем делить код по фичам, мы разделили его на слои. Данный подход позволяет сразу определить к какому слою относится тот или иной класс. Если вы заметили, классы слоя **data** разбиты немного не так, как в слоях **domain** и presentation. Здесь вместо фич приложения мы выделили типы источников данных - сеть, база данных, файловая система. Это связано с тем, что все фичи используют практически одни и те же классы (например, **MessagesApiService**) и их не имеет смысла разбивать по фичам.
+Прежде чем делить код по фичам, мы разделили его на слои. Данный подход позволяет сразу определить к какому слою относится тот или иной класс. Если вы заметили, классы слоя **data** разбиты немного не так, как в слоях **domain**, **presentation** и **di**. Здесь вместо фич приложения мы выделили типы источников данных - сеть, база данных, файловая система. Это связано с тем, что все фичи используют практически одни и те же классы (например, **ChatApiService**) и их не имеет смысла разбивать по фичам.
 
 В пакетах с именем **global** хранятся общие классы, которые используются в нескольких фичах. Например, в пакете **data/global** хрянятся модели и интерфейсы репозиториев. 
 
