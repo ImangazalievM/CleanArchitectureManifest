@@ -421,15 +421,15 @@ com.mydomain
 
 #### Router
 
-Т. к. Presenter содержит в себе логику реагирования на действия пользователя, то он также знает о том, на какой экран нужно перейти. Однако сам Presenter не может осуществлять переход на новый экран, т. к. для этого нам требуется Context. Поэтому за открытие нового экрана должна отвечать View. Для осуществления перехода на следующий экран мы должны вызвать метод View, например, openProfileScreen(), а уже в реализации самого метода осуществлять переход. Помимо данного подхода некоторые разработчики используют для навигации так называемый Router.
+Т. к. Presenter содержит в себе логику реагирования на действия пользователя, то он также знает о том, на какой экран нужно перейти. Однако сам Presenter не может осуществлять переход на новый экран, т. к. для этого нам требуется Context. Поэтому за открытие нового экрана должна отвечать View. Для осуществления перехода на следующий экран мы должны вызвать метод View, например, **openProfileScreen()**, а уже в реализации самого метода осуществлять переход. Помимо данного подхода некоторые разработчики используют для навигации так называемый Router.
 
-***Router*** - класс, для осуществления переходов между экранами (активити или фрагментами).
+**Router** - класс, для осуществления переходов между экранами (активити или фрагментами).
 
 Для реализации Router'а вы можете использовать библиотеку [Alligator](https://github.com/aartikov/Alligator)
 
 #### Mapper
 
-Mapper - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД (DTO) в модель бизнес-логики (Entity). Обычно они имеют название типа XxxMapper/XxxConverter, и имеют единственный метод с названием map/convert/transform, например:
+Mapper - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД в модель бизнес-логики (Entity). Обычно они имеют название типа XxxMapper, и имеют единственный метод с названием map (иногда встречаются названия convert/transform), например:
 
 ```java
 public class ArticleModelToEntityMapper {
@@ -451,7 +451,77 @@ public class ArticleModelToEntityMapper {
 
 #### ResourceManager
 
-[раздел на доработке]
+В некоторых случаях может потребоваться получить строку или число из ресурсов приложения в Presenter'е или слое **domain** . Однако, мы знаем, что они не должны напрямую взаимодействовать с фреймворком Android. Чтобы решить эту проблему мы можем создать специальную сущность ResourceManager, для доступа у внешним ресурсам. Для этого мы создаем интерфейс:
+
+```java
+public interface ResourceManager {
+
+    String getString(int resourceId);
+
+    int getInteger(int resourceId);
+
+}
+```
+
+Сам интерфейс должен располагаться в слое **domain**. После этого в слое **presentation** мы создаем реализацию нашего интерфейса:
+
+```java
+public class AndroidResourceManager implements ResourceManager {
+  
+    private Context context;
+
+    @Inject
+    public VisitsPresenter(Context context) {
+        this.context = context;
+    }
+  
+    @Override	
+    public String getString(int resourceId)  {
+        return context.getResources().getString(resourceId);
+    }
+
+    @Override	
+    public int getInteger(int resourceId) {
+        return context.getResources().getInteger(resourceId);
+    }
+
+}
+```
+
+Далее мы должны связать интерфейс и реализацию нашего ResourceManager'а в ApplicationModule:
+
+```java
+@Singleton
+@Provides
+protected ResourceManager provideResourceManager(AndroidResourceManager resourceManager) {
+    return resourceManager
+}
+```
+
+Теперь мы можем использовать ResourceManager в Presenter'е или Interactor'ах:
+
+```java
+@InjectViewState
+public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
+
+    ...
+    private ResourceManager resourceManager;
+    
+    @Inject
+    public ShotsPresenter(...,  AndroidResourceManager resourceManager) {
+        ...
+        this.resourceManager = resourceManager;
+    }
+    
+    private void onLoadError(Throwable throwable) {
+         ...
+         getViewState().showMessage(resourceManager.getString(R.string.articles_load_error));
+    }
+    
+}
+```
+
+Наверное, у внимательных читателей возник вопрос: почему мы используем класс **R** в Presenter'е? Ведь он также относится к Android? На самом деле, это не совсем так. Класс **R** вообще не использует никакие классы, и представляет из себя набор идентификаторов ресурсов. Поэтому, нет ничего плохого, чтобы использовать его в Presenter'е.
 
 ## Обработка ошибок
 
