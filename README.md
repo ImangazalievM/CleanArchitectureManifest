@@ -1,4 +1,4 @@
-# CleanArchitectureManifest (v 0.9.1)
+# CleanArchitectureManifest (v 0.9.2)
 
 
 
@@ -30,7 +30,7 @@
 
 ## Введение
 
-Clean Achitecture — принцип построения архитектуры приложения, [предложенный](https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html) Робертом Мартином в 2012 году. 
+Clean Achitecture — принцип построения архитектуры приложения, [предложенный](https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html) Робертом Мартином (который также известен как дядюшка Боб - Uncle Bob) в 2012 году. 
 
 Clean Architecture включает в себя два основных принципа:
 
@@ -98,131 +98,76 @@ Clean Architecture включает в себя два основных прин
 
 ![DomainLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DomainLayer.png)
 
-Слой бизнес-логики является "главным" из всех трех слоев. Он включает в себя два типа сущностей: **Interactor** и  **Entity**. 
+**Бизнес-логика** - это правила, описывающие, как работает бизнес (например, пользователь не может совершить покупку на сумму больше, чем есть на его счёте). Бизнес-логика не зависит от реализации базы данных или интерфейса пользователя. Бизнес-логика меняется только тогда, когда меняются требования бизнеса, и не зависит от используемой СУБД или интерфейса пользователя. 
 
-**Interactor** - 
+Роберт Мартин разделяет бизнес-логику на два вида - специфичную для конкретного приложения и и общую для всех приложений (в том случае если вы хотите сделать ваш код между приложениями под разные платформы). 
 
-Interactor имеет 
+**Бизнес объект (Entity)** - хранят бизнес-логику общую для всех приложений. 
 
-**Entity (бизнес-сущность)** - представляет из себя класс. Это ядро вашего приложения. Бизнес-сущности отражают функционал приложения, который можно описать, просто взглянув на них. Например, если вы разрабатваете приложение для интернет-магазина, то для него бизнес-моделями могут быть классы Product, Category и Order. Entity наименее подвержены изменениям, когда что-либо меняется в приложении. Пример Entity:
+**Interactor** – объект, реализующий бизнес-логику специфичную для конкретного приложения.
+
+Но это все в теории. На практике же используются только Interactor'ы. По крайней мере, мне не встречались приложения, использующие Entity. Кстати, многие путают Entity с DTO (Data Transfer Object). Дело в том, что Entity из Clean Architecture - это не совсем те Entity, которые мы привыкли видеть. [Данная](https://habrahabr.ru/company/mobileup/blog/335382/) статья проливает свет на этот вопрос, а также на многие другие.
+
+**Сценарий использования (Use Case)** - набор операций для выполнения какой-либо задачи.  Пример сценария использования при регистрации пользователя:
+
+> 1. Проверяем данные пользователя
+> 2. Отправляем данные на сервер для регистрации
+> 3. Сообщаем пользователю об успешной регистрации или ошибке
+>
+> Исключительные ситуации:
+>
+> 1. Пользователь ввел неверные данные (выдаем ошибку)
+
+Давайте теперь посмотрим как это выглядит на практике. Роберт Мартин предлагает создавать для каждого сценария использования отдельный класс, который имеет один метод для его запуска. Пример такого класса:
 
 ```java
-public class Product {
+public class RegisterUserInteractor {
+  
+    private UserRepository userRepository;
+    private RegisterDataValidator registerDataValidator;
 
-  private long id;
-  private String name;
-  private int price;
-
-  public Product(String title, String previewText, String articleUrl) {
-    this.title = title;
-    this.previewText = previewText;
-    this.articleUrl = articleUrl;
-  }
-
-  public long getId() {
-    return id;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getPrice() {
-    return price;
-  }
+    public TransferInteractor(UserRepository userRepository, RegisterDataValidator registerDataValidator) {
+        this.userRepository = userRepository;
+        this.registerDataValidator = registerDataValidator;
+    }
+  
+    public Single<RegisterResult> execute(User userData) {
+        return registerDataValidator.validate(userData)
+                .flatMap(userData -> userRepository.registerUser(userData));
+    }
   
 }
 ```
 
-**Бизнес-логика** - это правила, описывающие, как работает бизнес (например, пользователь не может совершить покупку на сумму больше, чем есть на его счёте). Бизнес-логика не зависит от реализации базы данных или интерфейса пользователя. Бизнес-логика меняется только тогда, когда меняются требования бизнеса, и не зависит от используемой СУБД или интерфейса пользователя. Это достигается за счет использования интерфейсов вместо конкретной реализации.
-
-Классы, в которых заключена бизнес-логика называются Interactor'ами (иногда их называют UseCase'ами). Например, перед тем как отправить заказ на обработку, мы хотим проверить, хватает ли средств на внутреннем аккаунте пользователя для осуществления заказа. Также нам нужно учесть комиссию платежной системы в 18%, которая взимается с пользователя.
+Однако практика показывает, что при таком подходе получается огромное количество классов, с малым количеством кода. Более правильным будет создание одного Interactor'а на один экран, методы которого реализуют определенный сценарий, например:
 
 ```java
-public class OrderInteractor {
-
-    private UsersRepository userRepository;
-    private CartRepository cartRepository;
-    private OrderRepository orderRepository;
-
-    public OrderInteractor(UsersRepository userRepository, 
-                           CartRepository cartRepository, 
-                           OrderRepository orderRepository) {
-        this.userRepository = userRepository;
-        this.cartRepository = cartRepository;
-        this.orderRepository = orderRepository;
-    }
-    
-    ...
+public class ArticleDetailsInteractor {
   
-    public void sendOrder(DeliveryInfo deliveryInfo, OrderResultListener resultlistener) {
-        User user = userRepository.getUserInfo();
-    
-        int cartTotalSum = cartRepository.getTotalSum();
-        int oderTotalSum = cartTotalSum * 1.18;
-        
-        if (user.getBalance() >= oderTotalSum) {
-            Order order = new Order(user, cartRepository.getProducts(), deliveryInfo)
-            orderRepository.sendOrder(order);
-            orderResultlistener.onOrderSendSuccess();
-        } else {
-            orderResultlistener.onError(new InsufficientFundsException());
-        }
-    }
+    private ArticlesRepository articlesRepository;
 
+    public ArticleDetailsInteractor(ArticlesRepository articlesRepository) {
+        this.articlesRepository = articlesRepository;
+    }
+  
+    public Single<Article> getArticleDetails(long articleId) {
+        return articlesRepository.getArticleDetails(articleId);
+    }
+  
+    public Completable addArticleToFavorite(long articleId, boolean isFavorite) {
+        return articlesRepository.addArticleToFavorite(articleId, isFavorite);
+    }
+  
 }
 ```
 
-Иногда Interactor может и вовсе не содержать бизнес-логики, а методы Interactor'а выступают в качестве прослойки между Repository и Presenter'ом:
+Как видите иногда методы Interactor'а могут и вовсе не содержать бизнес-логики, а методы Interactor'а выступают в качестве прослойки между Repository и Presenter'ом.
 
-```java
-public class CartInteractor {
+Если вы заметили, методы Interactor'а возвращают не просто результат, а классы RxJava 2 (в зависимости от типа операции мы используем разные классы - Single, Completable и т. д.).  Это дает несколько профитов:
 
-    private CartRepository cartRepository;
-    
-    public OrderInteractor(CartRepository cartRepository) {
-        this.cartRepository = cartRepository;
-    }
-    
-    public List<Products> getCartProducts() {
-        return cartRepository.getProducts();
-    }
-
-}
-```
-
-Использование слушателей для получения результатов от Interactora может быть не очень удобным при асинхронных операциях и при обработке ошибок. Чтобы 
-
-```java
-public class OrderInteractor {
-
-    private UsersRepository userRepository;
-    private CartRepository cartRepository;
-    private OrderRepository orderRepository;
-
-    public OrderInteractor(UsersRepository userRepository, 
-                           CartRepository cartRepository, 
-                           OrderRepository orderRepository) {
-        this.userRepository = userRepository;
-        this.cartRepository = cartRepository;
-        this.orderRepository = orderRepository;
-    }
-    
-    public void sendOrder(DeliveryInfo deliveryInfo, OrderResultListener resultlistener) {
-        User user = userRepository.getUserInfo();
-    
-        int cartTotalSum = cartRepository.getTotalSum();
-        int oderTotalSum = cartTotalSum * 1.18;
-        
-        if (user.getBalance() >= oderTotalSum) {
-            Order order = new Order(user, cartRepository.getProducts(), deliveryInfo)
-            orderRepository.sendOrder(order);
-            orderResultlistener.onOrderSendSuccess();
-        } else {
-            orderResultlistener.onError(new InsufficientFundsException());
-        }
-    }
-```
+1. Не нужно создавать слушатели для получения результата
+2. Легко переключать потоки
+3. Легко обрабатывать ошибки
 
 ### Слой работы с данными (Data)
 
@@ -259,8 +204,6 @@ public interface ArticleRepository {
 ![PresentationLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png)
 
 Слой представления содержит все компоненты, которые связаны с UI, такие как View-элементы, Activity, Fragment'ы, и т. д. Помимо этого здесь содержатся Presenter'ы и View (или ViewModel'и при использовании MVVM). В данном туториале для реализации слоя presentation будет использован шаблон MVP, но вы можете выбрать любой другой (MVVM, MVI).
-
-
 
 Для более удобной связки View и Presenter мы будем использовать библиотеку [Moxy](https://github.com/Arello-Mobile/Moxy). Она помогает решить многие проблемы, связанные с жизненным циклом Activity или Fragment'а. Moxy имеет базовые классы, такие как ```MvpView``` и ```MvpPresenter``` от которых должны наследоваться наши View и Presenter. Для избежания написания большого количества кода по связыванию View и Presenter, Moxy использует кодогенерацию. Для правильной работы кодогенерации мы должны использовать специальные аннотации, которые предоставляет нам Moxy. Более подробную информацию о библиотеке можно найти [здесь](https://habrahabr.ru/post/276189/).
 
@@ -614,7 +557,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 
 ### Тестирование бизнес-логики
 
-В данном слое тестируюится классы Interactorov. Необходимо проверить, действительно ли бизнес-логика реализует предопределенные требования к продукту.
+В данном слое тестируюится классы Interactor'ов и Entity. Необходимо проверить, действительно ли бизнес-логика реализует требуемое поведение .
 
 [раздел на доработке]
 
