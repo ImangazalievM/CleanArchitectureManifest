@@ -1,4 +1,4 @@
-# CleanArchitectureManifest (v 0.9.0)
+# CleanArchitectureManifest (v 0.9.1)
 
 
 
@@ -252,7 +252,7 @@ public interface ArticleRepository {
 }
 ```
 
-Как вы могли заметить, репозиторий возвращает не просто статьи, а класс из RxJava 2 -  [Single](http://reactivex.io/documentation/single.html). Благодаря этому мы легко можем сделать операцию извлечения данных синхронной/асинхронной, просто поменяв [Scheduler](http://reactivex.io/documentation/scheduler.html). Помимо класса Single могут быть использованы другие классы RxJava 2, такие как Completable, Maybe, Observable, Flowablr. Использование каждого из них обуславливается решаемой задачей. Подробнее о классах RxJava 2 можно почитать здесь - [What's different in 2.0](https://github.com/ReactiveX/RxJava/wiki/What%27s-different-in-2.0#observable-and-flowable);
+Как вы могли заметить, репозиторий возвращает не просто статьи, а класс из RxJava 2 -  [Single](http://reactivex.io/documentation/single.html). Благодаря этому мы легко можем сделать операцию извлечения данных синхронной/асинхронной, просто поменяв [Scheduler](http://reactivex.io/documentation/scheduler.html). Помимо класса Single могут быть использованы другие классы RxJava 2, такие как Completable, Maybe, Observable, Flowable. Использование каждого из них обуславливается решаемой задачей. Подробнее о классах RxJava 2 можно почитать здесь - [What's different in 2.0](https://github.com/ReactiveX/RxJava/wiki/What%27s-different-in-2.0#observable-and-flowable);
 
 ### Слой отображения (Presentation)
 
@@ -281,7 +281,7 @@ public interface ArticlesListView extends MvpView {
 }
 ```
 
-Пока мы описали лишь интерфейс View, т. к. какие команды Presenter может отдавать View. Обратите внимание, что наш интерфейс наследуется от интерфейса **MvpView**, входящего в библиотеку Moxy. Это является обязательным условием для корректной работы библиотеки.
+Пока мы описали лишь интерфейс View, т. е. какие команды Presenter может отдавать View. Обратите внимание, что наш интерфейс наследуется от интерфейса **MvpView**, входящего в библиотеку Moxy. Это является обязательным условием для корректной работы библиотеки.
 
 #### Presenter
 
@@ -483,22 +483,22 @@ com.mydomain
 
 **Router** - класс, для осуществления переходов между экранами (активити или фрагментами).
 
-Для реализации Router'а вы можете использовать библиотеку [Alligator](https://github.com/aartikov/Alligator)
+Для реализации Router'а вы можете использовать библиотеку [Alligator](https://github.com/aartikov/Alligator).
 
 #### Mapper
 
-Mapper - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД в модель бизнес-логики (Entity). Обычно они имеют название типа XxxMapper, и имеют единственный метод с названием map (иногда встречаются названия convert/transform), например:
+**Mapper** - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД в модель бизнес-логики (Entity). Обычно они имеют название типа XxxMapper, и имеют единственный метод с названием map (иногда встречаются названия convert/transform), например:
 
 ```java
 public class ArticleModelToEntityMapper {
 
-  public ArticleEntity map(ArticleModel model) {
+  public ArticleEntity map(ArticleDbModel model) {
     return new EntityProfile(model.getName(), model.getLastname, model.getAge());
   }
   
-  public List<ArticleEntity> map(Collection<ArticleModel> models) {
+  public List<ArticleEntity> map(Collection<ArticleDbModel> models) {
         final List<ToArticleEntity> result = new ArrayList<>(models.size());
-        for (ArticleModel model : models) {
+        for (ArticleDbModel model : models) {
             result.add(map(model));
         }
         return result;
@@ -506,6 +506,8 @@ public class ArticleModelToEntityMapper {
 
 }
 ```
+
+Т. к. слой **domain** ничего не знает о классах других слоев, то маппинг моделей должен выполняться во внешних слоях, т. е. репозиторием (при конвертации **data** > **domain** или **domain** > **data**) или презентером (при конвертации **domain** > **presentation** и наоборот) .
 
 #### ResourceManager
 
