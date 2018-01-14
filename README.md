@@ -1,4 +1,4 @@
-# CleanArchitectureManifest (v 0.9.2)
+# CleanArchitectureManifest (v 0.9.3)
 
 
 
@@ -10,15 +10,14 @@
 
 - [Введение](Введение)
 - [Слои и инверсия зависимостей](#Слои-и-инверсия-зависимостей)
+  - [Слой бизнес-логики (domain)](#Слой-бизнес-логики-domain)
+  - [Слой работы с данными (data)](#Слой-работы-с-данными-data)
+    - [Repository](#repository)
   - [Слой отображения (presentation)](#Слой-отображения-presentation)
     - [Model](#model)
     - [View](#view)
     - [Presenter](#presenter)
-    - [Связывание View с Presenter'ом](#Связывание-view-с-presenterом)
-  - [Слой бизнес-логики (domain)](#Слой-бизнес-логики-domain)
-  - [Слой работы с данными (data)](#Слой-работы-с-данными-data)
-    - [Repository](#repository)
-    - [DataStore](#datastore)
+    - [Связывание View с Presenter'ом](#Связывание-view-c-presenterом)
   - [Взаимодействие между слоями](#Взаимодействие-между-слоями)
  - [Дополнительные сущности, используемые на практике](#Дополнительные-сущности-используемые-на-практике)
     - [Router](#router)
@@ -187,13 +186,13 @@ public class ArticleDetailsInteractor {
 ```java
 public interface ArticleRepository {
 
-  Single<ArticleEntity> getArticle(String articleId);
+  Single<Article> getArticle(String articleId);
 
-  Single<List<ArticleEntity>> getLastNews();
+  Single<List<Article>> getLastNews();
   
-  Single<List<ArticleEntity>> getCategoryArticles(String categoryId);
+  Single<List<Article>> getCategoryArticles(String categoryId);
   
-  Single<List<ArticleEntity>> getRelatedPosts(String articleId);
+  Single<List<Article>> getRelatedPosts(String articleId);
   
 }
 ```
@@ -219,7 +218,8 @@ View отвечает за то, каким образом данные буду
 ```java
 public interface ArticlesListView extends MvpView {
 
-    void showVisits(List<ArticleEntity> articles);
+    void showLoadingProgress(boolean show);
+    void showVisits(List<Article> articles);
     void showArticlesLoadingErrorMessage();
 
 }
@@ -245,9 +245,13 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     }
   
     private void loadArticles() {
+      	getViewState().showLoadingProgress(true);
         articlesListInteractor.getArticles()
-                .subscribe(articles -> getViewState().showArticles(articles),
-                        throwable -> getViewState().showLoadingError());
+            .subscribe(articles -> {
+                getViewState().showLoadingProgress(false);
+                getViewState().showArticles(articles);
+            },
+            throwable -> getViewState().showLoadingError());
     }
   
     public void onArticleSelected(Article article) {
@@ -288,8 +292,6 @@ public VisitsPresenter(ArticlesListPresenterComponent component) {
 
 #### Связывание View с Presenter'ом
 
-[раздел на доработке]
-
 В контексте разработки под Android роль View на себя берет Activity (или Fragment), поэтому после создания интерфейса View, мы должны реализовать его нашей Activity или Fragment'е:
 
 ```java
@@ -313,7 +315,7 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 
   }
     
-  public void showArticles(List<ArticleEntity> articles) {
+  public void showArticles(List<Article> articles) {
     ...
   }
 
@@ -419,8 +421,6 @@ com.mydomain
 
 ### Дополнительные сущности, используемые на практике
 
-
-
 #### Router
 
 Т. к. Presenter содержит в себе логику реагирования на действия пользователя, то он также знает о том, на какой экран нужно перейти. Однако сам Presenter не может осуществлять переход на новый экран, т. к. для этого нам требуется Context. Поэтому за открытие нового экрана должна отвечать View. Для осуществления перехода на следующий экран мы должны вызвать метод View, например, **openProfileScreen()**, а уже в реализации самого метода осуществлять переход. Помимо данного подхода некоторые разработчики используют для навигации так называемый Router.
@@ -431,17 +431,17 @@ com.mydomain
 
 #### Mapper
 
-**Mapper** - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД в модель бизнес-логики (Entity). Обычно они имеют название типа XxxMapper, и имеют единственный метод с названием map (иногда встречаются названия convert/transform), например:
+**Mapper** - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД в модель бизнес-логики. Обычно они имеют название типа XxxMapper, и имеют единственный метод с названием map (иногда встречаются названия convert/transform), например:
 
 ```java
-public class ArticleModelToEntityMapper {
+public class ArticleDbModelMapper {
 
-  public ArticleEntity map(ArticleDbModel model) {
-    return new EntityProfile(model.getName(), model.getLastname, model.getAge());
+  public Article map(ArticleDbModel model) {
+    return new Article(model.getName(), model.getLastname, model.getAge());
   }
   
-  public List<ArticleEntity> map(Collection<ArticleDbModel> models) {
-        final List<ToArticleEntity> result = new ArrayList<>(models.size());
+  public List<Article> map(Collection<ArticleDbModel> models) {
+        final List<Article> result = new ArrayList<>(models.size());
         for (ArticleDbModel model : models) {
             result.add(map(model));
         }
@@ -541,20 +541,70 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 - что мы хотим тестировать?
 - как мы будем это тестировать?
 
-Что мы хотим тестировать?
+Что мы хотим тестировать:
 
 - Мы хотим проверить нашу бизнес-логику независимо от какого-либо фреймворка или библиотеки.
 - Мы хотим протестировать нашу интеграцию с API.
 - Мы хотим протестировать нашу интеграцию с нашей системой персистентности.
 - Мы хотим протестировать некоторые общие компоненты пользовательского интерфейса.
-- Мы хотим проверить критерии приемлемости, написанные с точки зрения пользователя, в сценарии полностью черного ящика.
+
+Что мы НЕ должны тестировать:
+
+- Сторонние библиотеки (мы предполагаем, что они работают правильно, потому что уже протестированы разработчиками)
+- Тривиальный код (например, геттеры и сеттеры)
+
+Теперь, давайте разберём то, как мы будем тестировать каждый из слоев.
+
+### Подготовка к тестированию
+
+Перед началом тестирования нам нужно сделать все операции синхронными. 
+
+[создание TestSchedulersProvider]
 
 ### Тестирование слоя представления
 
-Данный слой включает в себя 2 типа тестов: UI-тесты и unit-тесты.
+Данный слой включает в себя 2 типа тестов:  Unit-тесты и UI-тесты.
 
-- UI-тесты используются для тестирования Activity (проверяется корректность отображения элементов и т. д.). Для реализации этих тестов я рекомендую использовать фреймворк Espresso.
-- unit-тесты используются для тестирования Presenter'ов.
+- Unit-тесты используются для тестирования Presenter'ов.
+- UI-тесты используются для тестирования Activity (проверяется корректность отображения элементов и т. д.).
+
+Существуют различные соглашения по именованию тестовых методов. Например, в этой [статье](https://dzone.com/articles/7-popular-unit-test-naming) описаны некоторые из них. В примерах, которые я буду приводить далее, я не буду придерживаться какого-либо соглашения. В общем, нет большой разницы, как их называть. Самое главное понять из названия, что тестирует наш метод и что мы хотим получить в результате. 
+
+Давайте рассмотрим пример теста для **ArticlesListPresenter**:
+
+```java
+public class ArticlesListPresenterTest {
+
+    @Test
+    public void shouldLoadArticlesOnViewAttached() {
+        //preparing
+        ArticlesListInteractor interactor = Mockito.mock(ArticlesListInteractor.class);
+        TestSchedulersProvider schedulers = new TestSchedulersProvider();
+        ArticlesListPresenter presenter = new ArticlesListPresenter(interactor, schedulers);
+        ArticlesListView view = Mockito.mock(ArticlesListView.class);
+      
+        ArrayList<Article> articlesList = ArrayList<Article>;
+        when(interactor.getArticlesList()).thenReturn(Single.just(articlesList));
+      
+      	//testing
+        presenter.attachView(view)
+
+        //asserting
+        verify(view, times(1)).showLoadingProgress(true);
+        verify(view, times(1)).showLoadingProgress(false);
+        verify(view, times(1)).showArticles(articlesList);
+    }
+  
+}
+```
+
+Как видите, мы разделили код теста на три части:
+
+- Подготовка к тестированию. Здесь мы инициализируем объекты для тестирования, подготавливаем тестовые данные, а также предопределяем поведение моков.
+- Само тестирование. 
+- Проверка результатов тестирования. Здесь мы проверяем, что у View были вызваны нужные методы и переданы аргументы.
+
+
 
 ### Тестирование бизнес-логики
 
@@ -564,7 +614,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 
 ### Тестирование слоя работы с данными
 
-
+[раздел на доработке]
 
 ## Начало разработки приложения с использованием Clean Architecture
 
@@ -574,15 +624,13 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 
 ## Перенос на Clean Architecture существующих проектов
 
-Текст-введение
+
 
 #### Шаг 1: Разбиеваем Activity на View и Presenter
 #### Шаг 2: Отделяем Model от Presenter
 #### Шаг 3:
 #### Шаг 4: 
 #### Шаг 5: Выносим бизнес-логику в Interactor'ы
-
-[раздел на доработке]
 
 ## FAQ по Clean Architecture
 
@@ -592,9 +640,9 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 
 В конце хочется привести поучительную историю про Netscape, который переписывали с нуля больше, чем три года - [Things You Should Never Do, Part I](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/)
 
-#### Обязательно ли создавать отдельные сущности для каждого из слоев (Domain, Data, Presentaion) или же можно использовать Entity во всех трех слоях?
+#### Обязательно ли создавать отдельные сущности для каждого из слоев (Domain, Data, Presentaion)?
 
-Согласно принципам Clean Architecture, слой Domain ничего не должен знать о внешних слоях (Data и Presentation), но внешние слои без проблем могут использовать классы из слоя Domain. Следовательно, можно не создавать отдельные сущности для каждого из слоев, а использовать Entity. Однако, если формат Entity не совпадает с тем, что используется во внешних слоях, то нужно создать отдельную сущность. Также не следует использовать в Entity аннотации, которые требуются библиотекам, типа [Gson](https://github.com/google/gson) или [Room](https://developer.android.com/topic/libraries/architecture/room.html). В этом случае нужно создать отдельную сущность в слое Data.
+Согласно принципам Clean Architecture, слой Domain ничего не должен знать о внешних слоях (Data и Presentation), но внешние слои без проблем могут использовать классы из слоя Domain. Следовательно, можно не создавать отдельные сущности для каждого из слоев, а использовать только те, что лежат в слое Domain. Однако, если их формат не совпадает с тем, что используется во внешних слоях, то нужно создать отдельную сущность. Также не следует использовать в моделях слоя Domain аннотации, которые требуются библиотекам, типа [Gson](https://github.com/google/gson) или [Room](https://developer.android.com/topic/libraries/architecture/room.html). В этом случае нужно создать отдельную сущность в слое Data.
 
 [раздел на доработке]
 
