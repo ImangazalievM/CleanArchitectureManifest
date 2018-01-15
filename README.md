@@ -1,4 +1,4 @@
-# CleanArchitectureManifest (v 0.9.3)
+# CleanArchitectureManifest (v 0.9.4)
 
 
 
@@ -22,6 +22,8 @@
 - [Дополнительные сущности, используемые на практике](#Дополнительные-сущности-используемые-на-практике)
   - [Router](#router)
   - [Mapper](#mapper)
+  - [ResourceManager](#resourcemanager)
+  - [SchedulersProvider](#schedulersprovider)
 - [Обработка ошибок](#Обработка-ошибок)
 - [Тестирование](#Тестирование)
 - [Перенос на Clean Architecture существующих проектов](#Перенос-на-clean-architecture-существующих-проектов)
@@ -123,15 +125,20 @@ public class RegisterUserInteractor {
   
     private UserRepository userRepository;
     private RegisterDataValidator registerDataValidator;
+    private SchedulersProvider schedulersProvider;
 
-    public TransferInteractor(UserRepository userRepository, RegisterDataValidator registerDataValidator) {
+    public RegisterUserInteractor(UserRepository userRepository, 
+                                  RegisterDataValidator registerDataValidator,
+                                  SchedulersProvider schedulersProvider) {
         this.userRepository = userRepository;
         this.registerDataValidator = registerDataValidator;
+        this.schedulersProvider = schedulersProvider;
     }
   
     public Single<RegisterResult> execute(User userData) {
         return registerDataValidator.validate(userData)
-                .flatMap(userData -> userRepository.registerUser(userData));
+                .flatMap(userData -> userRepository.registerUser(userData))
+                .subscribeOn(schedulersProvider.io());
     }
   
 }
@@ -143,17 +150,22 @@ public class RegisterUserInteractor {
 public class ArticleDetailsInteractor {
   
     private ArticlesRepository articlesRepository;
+    private SchedulersProvider schedulersProvider;
 
-    public ArticleDetailsInteractor(ArticlesRepository articlesRepository) {
+    public ArticleDetailsInteractor(ArticlesRepository articlesRepository,
+                                    SchedulersProvider schedulersProvider) {
         this.articlesRepository = articlesRepository;
+        this.schedulersProvider = schedulersProvider;
     }
   
     public Single<Article> getArticleDetails(long articleId) {
-        return articlesRepository.getArticleDetails(articleId);
+        return articlesRepository.getArticleDetails(articleId)
+                          .subscribeOn(schedulersProvider.io());
     }
   
     public Completable addArticleToFavorite(long articleId, boolean isFavorite) {
-        return articlesRepository.addArticleToFavorite(articleId, isFavorite);
+        return articlesRepository.addArticleToFavorite(articleId, isFavorite)
+                          .subscribeOn(schedulersProvider.io());
     }
   
 }
@@ -161,11 +173,13 @@ public class ArticleDetailsInteractor {
 
 Как видите иногда методы Interactor'а могут и вовсе не содержать бизнес-логики, а методы Interactor'а выступают в качестве прослойки между Repository и Presenter'ом.
 
-Если вы заметили, методы Interactor'а возвращают не просто результат, а классы RxJava 2 (в зависимости от типа операции мы используем разные классы - Single, Completable и т. д.).  Это дает несколько профитов:
+Если вы заметили, методы Interactor'а возвращают не просто результат, а классы RxJava 2 (в зависимости от типа операции мы используем разные классы - Single, Completable и т. д.).  Это дает несколько преимуществ:
 
-1. Не нужно создавать слушатели для получения результата
-2. Легко переключать потоки
-3. Легко обрабатывать ошибки
+1. Не нужно создавать слушатели для получения результата.
+2. Легко переключать потоки.
+3. Легко обрабатывать ошибки.
+
+Для переключения потоков мы используем, как обычно, метод subscribeOn, однако мы получаем Scheduler не через статические методы класса Schedulers, а при помощи [SchedulersProvider'а](#schedulersprovider). В будущем это поможет нам при тестировании.
 
 ### Слой работы с данными (Data)
 
@@ -232,10 +246,13 @@ public interface ArticlesListView extends MvpView {
 public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 
     private ArticlesListInteractor articlesListInteractor;
+    private SchedulersProvider schedulersProvider;
 
     @Inject
-    public VisitsPresenter(ArticlesListInteractor articlesListInteractor) {
+    public VisitsPresenter(ArticlesListInteractor articlesListInteractor,
+                           SchedulersProvider schedulersProvider) {
         this.articlesListInteractor = articlesListInteractor;
+        this.schedulersProvider = schedulersProvider;
       
         loadArticles();
     }
@@ -243,6 +260,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     private void loadArticles() {
       	getViewState().showLoadingProgress(true);
         articlesListInteractor.getArticles()
+            .observeOn(schedulersProvider.ui())
             .subscribe(articles -> {
                 getViewState().showLoadingProgress(false);
                 getViewState().showArticles(articles);
@@ -287,6 +305,8 @@ public VisitsPresenter(ArticlesListPresenterComponent component) {
 
 Однако, данный способ является неправильным, т. к. усложняет тестирование класса и создает кучу ненужного кода. Если в первом случае мы сразу могли передать mock'и классов через конструктор, то теперь нам нужно создать DI-контейнер и передавать его. Также данный способ делает класс зависимым от конкретного DI-фреймворка, что тоже не есть хорошо.
 
+Также обратите внимание на то, что перед тем как отобразить результаты, полученные от Interactor'а, мы переключаем поток на UI при помощи `observeOn(schedulersProvider.ui())`. Это сделано потому, что мы не знаем заранее в каком потоке нам придут данные.
+
 #### Связывание View с Presenter'ом
 
 В контексте разработки под Android роль View на себя берет Activity (или Fragment), поэтому после создания интерфейса View, мы должны реализовать его нашей Activity или Fragment'е:
@@ -328,8 +348,6 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 Так как конструктор нашего Presenter'а не пустой, а принимает на вход определенные параметры, нам нужно предоставить библиотеке объект Presenter'а. Мы делаем это при помощи метода ```provideArticlesListPresenter```, который мы пометили аннотацией ```@ProvidePresenter```. Как и во всех других случаях использования кодогенерации, переменные и методы, помеченные аннотациями, должны быть видны на уровне пакета, т. е. у них не должно быть модификаторов видимости (private, public, protected).
 
 ### Разбиение классов по пакетам
-
-
 
 Ниже представлен пример разбиения пакетов по фичам новостного приложения приложения: 
 
@@ -521,6 +539,81 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 
 Наверное, у внимательных читателей возник вопрос: почему мы используем класс **R** в Presenter'е? Ведь он также относится к Android? На самом деле, это не совсем так. Класс **R** вообще не использует никакие классы, и представляет из себя набор идентификаторов ресурсов. Поэтому, нет ничего плохого, чтобы использовать его в Presenter'е.
 
+#### SchedulersProvider
+
+Перед началом тестирования нам нужно сделать все операции синхронными. Для этого мы должны заменить все Scheduler'ы на **TestScheduler**, поэтому мы не устанавливаем Scheduler'ы напрямую через класс **Schedulers**, используем **SchedulersProvider**:
+
+```java
+public class SchedulersProvider {
+
+    @Inject
+    public SchedulersProvider() {
+    }
+
+    public Scheduler ui() {
+        return AndroidSchedulers.mainThread();
+    }
+
+    public Scheduler computation() {
+        return Schedulers.computation();
+    }
+
+    public Scheduler io() {
+        return Schedulers.io();
+    }
+
+    public Scheduler newThread() {
+        return Schedulers.newThread();
+    }
+
+    public Scheduler trampoline() {
+        return Schedulers.trampoline();
+    }
+
+}
+```
+
+Благодаря этому мы можем легко заменить Scheduler'ы на нужные нам, всего лишь создав наследника класса SchedulersProvider'а и переопределив методы:
+
+```java
+public class TestSchedulersProvider extends SchedulersProvider {
+
+    private final TestScheduler testScheduler = new TestScheduler();
+
+    @Override
+    public Scheduler ui() {
+        return testScheduler;
+    }
+
+    @Override
+    public Scheduler computation() {
+        return testScheduler;
+    }
+
+    @Override
+    public Scheduler io() {
+        return testScheduler;
+    }
+
+    @Override
+    public Scheduler newThread() {
+        return testScheduler;
+    }
+
+    @Override
+    public Scheduler trampoline() {
+        return testScheduler;
+    }
+
+    public TestScheduler testScheduler() {
+        return testScheduler;
+    }
+
+}
+```
+
+Далее, при самом тестировании, нам нужно будет лишь использовать TestSchedulersProvider вместо SchedulersProvider. Более подробно о тестировании кода с RxJava можно почитать [здесь](https://github.com/Froussios/Intro-To-RxJava/blob/master/Part%204%20-%20Concurrency/2.%20Testing%20Rx.md).
+
 ## Обработка ошибок
 
 [раздел на доработке]
@@ -547,12 +640,6 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 - Тривиальный код (например, геттеры и сеттеры)
 
 Теперь, давайте разберём то, как мы будем тестировать каждый из слоев.
-
-### Подготовка к тестированию
-
-Перед началом тестирования нам нужно сделать все операции синхронными. 
-
-[создание TestSchedulersProvider]
 
 ### Тестирование слоя представления
 
