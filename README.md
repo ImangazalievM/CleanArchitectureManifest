@@ -475,7 +475,7 @@ public class AndroidResourceManager implements ResourceManager {
     private Context context;
 
     @Inject
-    public VisitsPresenter(Context context) {
+    public AndroidResourceManager(Context context) {
         this.context = context;
     }
   
