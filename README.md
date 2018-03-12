@@ -249,7 +249,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     private SchedulersProvider schedulersProvider;
 
     @Inject
-    public VisitsPresenter(ArticlesListInteractor articlesListInteractor,
+    public ArticlesListPresenter(ArticlesListInteractor articlesListInteractor,
                            SchedulersProvider schedulersProvider) {
         this.articlesListInteractor = articlesListInteractor;
         this.schedulersProvider = schedulersProvider;
