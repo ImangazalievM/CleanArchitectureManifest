@@ -248,7 +248,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     private SchedulersProvider schedulersProvider;
 
     @Inject
-    public VisitsPresenter(ArticlesListInteractor articlesListInteractor,
+    public ArticlesListPresenter(ArticlesListInteractor articlesListInteractor,
                            SchedulersProvider schedulersProvider) {
         this.articlesListInteractor = articlesListInteractor;
         this.schedulersProvider = schedulersProvider;
@@ -523,7 +523,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     private ResourceManager resourceManager;
     
     @Inject
-    public ShotsPresenter(...,  AndroidResourceManager resourceManager) {
+    public ArticlesListPresenter(...,  AndroidResourceManager resourceManager) {
         ...
         this.resourceManager = resourceManager;
     }
@@ -740,7 +740,7 @@ public class LoginPresenterImpl implements LoginPresenter {
 
 Нет, интерфейсы для презентера и интерактора создавать не нужно. Это создает дополнительные сложности при разработке, при этом пользы от данного подхода практически нет. Вот лишь некоторые проблемы, которые порождает создаение лишних интерфейсов:
 
-- Если мы хотим добавить новый метод или изменить существующий, нам нужно изменить интерфейс. Помимо это мы также должны изменить реализацию метода. Это занимает довольно времени, даже при использовании такой продвинутой IDE как Android Studio.
+- Если мы хотим добавить новый метод или изменить существующий, нам нужно изменить интерфейс. Помимо этого мы также должны изменить реализацию метода. Это занимает довольно времени, даже при использовании такой продвинутой IDE как Android Studio.
 - Использование дополнительных интерфейсов усложняет навигацию по коду. Если вы хотите перейти к реализации метода Presenter'а из Activity (т. е. реализации View), то вы переходите к интерфейсу Presenter'а.
 - Интерфейс никак не улучшает тестируемость кода. Вы с легкостью можете заменить класс Presenter'а на mock, используя любую библиотеку для mock'ирования.
 
