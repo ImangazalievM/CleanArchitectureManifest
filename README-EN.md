@@ -16,8 +16,7 @@ Here you will find description of main principles and rules,which is worth follo
     - [View](#view)
     - [Presenter](#presenter)
     - [Binding View with Presenter](#binding-view-with-presenter)
-  - [Interaction between layers](#interaction-between-layers)
-- [Additional entities used in practicе](#additional-entities-used-in-practicе)
+- [Additional entities used in practicе](#additional-entities-used-in-practice)
   - [Router](#router)
   - [Mapper](#mapper)
   - [ResourceManager](#resourcemanager)
@@ -25,7 +24,7 @@ Here you will find description of main principles and rules,which is worth follo
 - [Errors handling](#errors-handling)
 - [Testing](#testing)
 - [Start a new application development using Clean Architecture](#start-a-new-application-development-using-clean-architecture)
-- [Migration project to Clean Architecture](#migration-project-to-Clean-Architecture)
+- [Migration project to Clean Architecture](#migration-project-to-clean-architecture)
 - [Clean Architecture FAQ](#clean-architecture-faq)
 
 ## Introduction
