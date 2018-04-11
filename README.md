@@ -212,7 +212,7 @@ public interface ArticleRepository {
 
 ![PresentationLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png)
 
-Слой представления содержит все компоненты, которые связаны с UI, такие как View-элементы, Activity, Fragment'ы, и т. д. Помимо этого здесь содержатся Presenter'ы и View (или ViewModel'и при использовании MVVM). В данном туториале для реализации слоя presentation будет использован шаблон MVP, но вы можете выбрать любой другой (MVVM, MVI).
+Слой представления содержит все компоненты, которые связаны с UI, такие как View-элементы, Activity, Fragment'ы и т. д. Помимо этого здесь содержатся Presenter'ы и View (или ViewModel'и при использовании MVVM). В данном туториале для реализации слоя presentation будет использован шаблон MVP, но вы можете выбрать любой другой (MVVM, MVI).
 
 Для более удобной связки View и Presenter мы будем использовать библиотеку [Moxy](https://github.com/Arello-Mobile/Moxy). Она помогает решить многие проблемы, связанные с жизненным циклом Activity или Fragment'а. Moxy имеет базовые классы, такие как ```MvpView``` и ```MvpPresenter``` от которых должны наследоваться наши View и Presenter. Для избежания написания большого количества кода по связыванию View и Presenter, Moxy использует кодогенерацию. Для правильной работы кодогенерации мы должны использовать специальные аннотации, которые предоставляет нам Moxy. Более подробную информацию о библиотеке можно найти [здесь](https://habrahabr.ru/post/276189/).
 

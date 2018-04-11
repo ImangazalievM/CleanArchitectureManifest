@@ -1,6 +1,6 @@
 # CleanArchitectureManifest (v 0.9.4)
 
-Here you will find description of main principles and rules,which is worth following in developing Android apps using Clean Architecture approach.
+Here you will find description of main principles and rules, that are worth following in developing Android apps using Clean Architecture approach.
 
 ![CleanArchitectureManifest](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/CleanArchitectureManifest.png)
 
@@ -91,27 +91,27 @@ As can be seen from the scheme, all three layers can exchange data. It is worth 
 
 ![DomainLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DomainLayer.png)
 
-**Бизнес-логика** - это правила, описывающие, как работает бизнес (например, пользователь не может совершить покупку на сумму больше, чем есть на его счёте). Бизнес-логика не зависит от реализации базы данных или интерфейса пользователя. Бизнес-логика меняется только тогда, когда меняются требования бизнеса, и не зависит от используемой СУБД или интерфейса пользователя. 
+**Business logic** is rules, that describe how a business works (for example, user can't make a purchase for more than there is on his account). Business logic does not depend on the implementation of the database or UI. Business logic changes only when business requirements change.
 
-Роберт Мартин разделяет бизнес-логику на два вида: специфичную для конкретного приложения и общую для всех приложений (в том случае, если вы хотите сделать ваш код общим между приложениями под разные платформы). 
+Robert Martin divides business logic into two types: a specific for a concrete application and common for all apps (if you want to share your code between platforms).
 
-**Бизнес объект (Entity)** - хранят бизнес-логику общую для всех приложений. 
+**Entity** - contain application independent business rules. 
 
-**Interactor** – объект, реализующий бизнес-логику специфичную для конкретного приложения.
+**Interactor** - an object that implements business logic for a specific application.
 
-Но это все в теории. На практике же используются только Interactor'ы. По крайней мере, мне не встречались приложения, использующие Entity. Кстати, многие путают Entity с DTO (Data Transfer Object). Дело в том, что Entity из Clean Architecture - это не совсем те Entity, которые мы привыкли видеть. [Данная](https://habrahabr.ru/company/mobileup/blog/335382/) статья проливает свет на этот вопрос, а также на многие другие.
+But it's all in theory. In practice, only Interactors are used. At least I have not seen any applications that use Entity. By the way, many confuse Entity with DTO (Data Transfer Object). The fact is that the Entity of Clean Architecture is not exactly the Entity that we are used to seeing.
 
-**Сценарий использования (Use Case)** - набор операций для выполнения какой-либо задачи.  Пример сценария использования при регистрации пользователя:
+**Use Case** - is a series of operations to achieve a goal. Example of a use case for user registration:
 
-> 1. Проверяем данные пользователя
-> 2. Отправляем данные на сервер для регистрации
-> 3. Сообщаем пользователю об успешной регистрации или ошибке
+> 1. The system checks user data
+> 2. The system sends data to the server for registration
+> 3. The system informs the user about the successful registration or error
 >
-> Исключительные ситуации:
+> Exceptional situations:
 >
-> 1. Пользователь ввел неверные данные (выдаем ошибку)
+> 1. The user entered incorrect data (the system shows an error)
 
-Давайте теперь посмотрим как это выглядит на практике. Роберт Мартин предлагает создавать для каждого сценария использования отдельный класс, который имеет один метод для его запуска. Пример такого класса:
+Let's see how it looks like in practice. Robert Martin suggests to create separate class for each use case, that  has single method to run it. An example of such a class:
 
 ```java
 public class RegisterUserInteractor {
@@ -137,7 +137,7 @@ public class RegisterUserInteractor {
 }
 ```
 
-Однако практика показывает, что при таком подходе получается огромное количество классов, с малым количеством кода. Более правильным будет создание одного Interactor'а на один экран, методы которого реализуют определенный сценарий, например:
+However, practice shows that with this approach, you get a huge number of classes, with a small amount of code. A better approach would be to create single Interactor for one screen, the methods of which implement a certain use case. For example:
 
 ```java
 public class ArticleDetailsInteractor {
@@ -164,29 +164,28 @@ public class ArticleDetailsInteractor {
 }
 ```
 
-Как видите иногда методы Interactor'а могут и вовсе не содержать бизнес-логики, а методы Interactor'а выступают в качестве прослойки между Repository и Presenter'ом.
+As you can see, sometimes Interactor methods can not contain business logic at all, and Interactor methods act as a proxy between Repository and Presenter.
 
-Если вы заметили, методы Interactor'а возвращают не просто результат, а классы RxJava 2 (в зависимости от типа операции мы используем разные классы - Single, Completable и т. д.).  Это дает несколько преимуществ:
+If you notice, the Interactor methods return not just the result, but the classes of RxJava 2 (depending on the type of operation we use different classes - Single, Completable, etc.). This gives several advantages:
 
-1. Не нужно создавать слушатели для получения результата.
-2. Легко переключать потоки.
-3. Легко обрабатывать ошибки.
+1. You do not need to create listeners to get results.
+2. It's easy to switch threads.
+3. It's easy to handle  errors.
 
-Для переключения потоков мы используем, как обычно, метод subscribeOn, однако мы получаем Scheduler не через статические методы класса Schedulers, а при помощи [SchedulersProvider'а](#schedulersprovider). В будущем это поможет нам при тестировании.
+
+To switch the between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider'а](#schedulersprovider). It will help us in the future, when we want to test our code.
 
 ### Data layer
 
 ![DataLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DataLayer.png)
 
+This layer contains everything about storing and managing data. It could be database, SharedPreferences, network or file system, as well as caching logic.
 
-
-В данном  слое содержится всё, что связано с хранением данных и управлением ими. Это может работа с базой данных, SharedPreferences, сетью или файловой системой, а также логика кеширования, если она имеется.
-
-"Мостом" между слоями data и domain является интерфейс Repository (в оригинальной схеме дядюшки Боба он называется Gateway). Сам интерфейс находится в слое domain, а уже реализация располагается в слое data. При этом классы domain-слоя не знают откуда берутся данные - из БД, сети или откуда-то ещё. Именно поэтому вся логика кеширования должна содержаться в data-слое.
+As a "bridge" between data and domain layer, there is Repository interface (in the original Uncle Bob's scheme it's called Gateway). The interface itself is stored in the Domain layer, but his implementation is stored in the Data layer. In doing so, domain layer classes don't know where the data comes from - from the database, the network or from somewhere else. That's why all caching logic should be contained in the data layer.
 
 #### Repository
 
-**Repository** - представляет из себя интерфейс, с которым работает Interactor. В нем описывается какие данные хочет получать Interactor от внешних слоев. В приложении может быть несколько репозиториев, в зависимости от задачи. Например, если мы делаем  новостное приложение, репозиторий работающий со статьями может называться ArticleRepository, а репозиторий для работы с комментариями CommentRepository. Пример репозитория, работающего со статьями:
+**Repository** - is the interface with which Interactor works. It describes what data Interactor wants to obtain from external layers. There may be several repositories in the application, depending on the task. For example, if we develop a news application, the repository that works with articles can be called ArticleRepository, and a repository for working with comments will be called CommentRepository . An example of a repository that works with articles:
 
 ```java
 public interface ArticleRepository {
@@ -206,17 +205,17 @@ public interface ArticleRepository {
 
 ![PresentationLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png)
 
-Слой представления содержит все компоненты, которые связаны с UI, такие как View-элементы, Activity, Fragment'ы, и т. д. Помимо этого здесь содержатся Presenter'ы и View (или ViewModel'и при использовании MVVM). В данном туториале для реализации слоя presentation будет использован шаблон MVP, но вы можете выбрать любой другой (MVVM, MVI).
+Presentation layer contains all UI components, such as views, Activities, Fragments, etc. Also, it contains Presenters and Views (or ViewModels if you use MVVM). In this tutorial we will use MVP (Model-View-Presenter) pattern, but you can choose other one (MVVM, MVI).
 
-Для более удобной связки View и Presenter мы будем использовать библиотеку [Moxy](https://github.com/Arello-Mobile/Moxy). Она помогает решить многие проблемы, связанные с жизненным циклом Activity или Fragment'а. Moxy имеет базовые классы, такие как ```MvpView``` и ```MvpPresenter``` от которых должны наследоваться наши View и Presenter. Для избежания написания большого количества кода по связыванию View и Presenter, Moxy использует кодогенерацию. Для правильной работы кодогенерации мы должны использовать специальные аннотации, которые предоставляет нам Moxy. Более подробную информацию о библиотеке можно найти [здесь](https://habrahabr.ru/post/276189/).
+The library helps to solve many problems related with Activity lifecycle. Moxy has base classes, there are `MvpView` and `MvpPresenter`, that must be extended by all your Views and Presenters. To save you from coding boilerplate classes Moxy uses Annotation Processing. For the correct work of code generation, you must use the special annotations provided by Moxy. More information about the library you can find [here](https://medium.com/redmadrobot-mobile/android-without-lifecycle-mpvsv-approach-with-moxy-6a3ae33521e).
 
 #### Model
 
-MVP расшифровывается как Model-View-Presenter (модель-представление-презентер). Model содержит в себе бизнес-логику и код по работе с данными.  Т. к. мы используем связку Clean Architecture + MVP, то Model у нас является код находящийся в слоях Data (работа с данными) и Domain (бизнес-логика). Следовательно в слое Presentation остаются лишь два компонента - View и Presenter.
+Model contains the business-logic and code for managing data. And because we use Clean Architecture + MVP, as Model will act Data and Domain layers.
 
 #### View
 
-View отвечает за то, каким образом данные будут показаны пользователю. В случае с Android в качестве View выступает Activity или Fragment. Также View сообщает о действиях пользователя Presenter'у, будь то нажатие на кнопку или ввод текста. Пример View:
+View is responsible for how the data will be shown to the user. In the case of Android, View must be implemented by an Activity or Fragment. Also, View informs the Presenter of user interaction, such as button click or text input. There is example of View:
 
 ```java
 public interface ArticlesListView extends MvpView {
@@ -228,7 +227,7 @@ public interface ArticlesListView extends MvpView {
 }
 ```
 
-Пока мы описали лишь интерфейс View, т. е. какие команды Presenter может отдавать View. Обратите внимание, что наш интерфейс наследуется от интерфейса **MvpView**, входящего в библиотеку Moxy. Это является обязательным условием для корректной работы библиотеки.
+So far we have described View interface, i. e. which View methods the Presenter can call. Note that our View is inherited from the **MvpView**, which is part of the Moxy library. That is a must for correct library work.
 
 #### Presenter
 
