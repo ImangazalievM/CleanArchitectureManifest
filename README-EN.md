@@ -231,7 +231,7 @@ So far we have described View interface, i. e. which View methods the Presenter 
 
 #### Presenter
 
-Согласно концепции MVP, View не может напрямую взаимодействовать с Model, поэтому связующим звеном между ними является Presenter. Presenter реагирует на действия пользователя, о которых ему сообщила View  (такие как нажатие на кнопку, пункт списка или ввод текста), после чего принимает решения о том, что делать дальше. Например, это может быть запрос данных у модели и отображение их во View. Пример Presenter'а:
+According to the MVP concept, View can not directly interact with the Model, so the bridge between them is Presenter. Presenter reacts to user actions that View has notified to it (such as pressing a button, list item or text input), and then decides what to do next. For example, it could be a data request from the model and display them in the View. Presenter example:
 
 ```java
 @InjectViewState
@@ -267,9 +267,9 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 }
 ```
 
-Все необходимые классы для работы Presenter'а (как и всех остальных классов) мы передаем через конструктор. Этот способ так и называется - внедрение через конструктор.
+All the necessary classes we pass through the Presenter's constructor. It's actually called "constructor injection".
 
-При создании объекта Presenter'а мы должны передать ему запрашиваемые конструктором зависимости. Если их будет много, то создание Presenter'а будет довольно сложным делом. Чтобы не делать этого вручную, мы доверим это дело Component'у. 
+When creating the Presenter's object we must pass dependencies required by the constructor. If there are a lot of them, the creation of Presenter will be rather difficult. Because we don't want to do this manually, we will delegate this work to the Component.
 
 ```java
 @Presenter
@@ -281,9 +281,9 @@ public interface ArticlesListComponent {
 }
 ```
 
-Он подставит нужные зависимости, а нам нужно будет лишь получить инстанс Presenter'а вызвав  метод **getPresenter()**. Если у вас возник вопрос "А как в таком случае передавать  аргументы в Presenter?", то загляните в FAQ - там подробно описан этот вопрос.
+It will supply the necessary dependencies, and we need only get the Presenter instance by calling the **getPresenter()** method. If you have a question, "How do you pass arguments to Presenter then?", then look in the FAQ - there is a detailed description of this issue.
 
-Иногда можно встретить такое, что в конструктор передается DI-контейнер (Component), после чего все необходимые зависимости внедряются в поля:
+Sometimes you can find the code in which the DI-container (Component) is passed to the constructor, after which all the necessary dependencies inject in the fields:
 
 ```java
 @Inject
@@ -292,16 +292,15 @@ ArticlesListInteractor articlesListInteractor;
 public VisitsPresenter(ArticlesListPresenterComponent component) {
 	component.inject(this);
 }
-
 ```
 
-Однако, данный способ является неправильным, т. к. усложняет тестирование класса и создает кучу ненужного кода. Если в первом случае мы сразу могли передать mock'и классов через конструктор, то теперь нам нужно создать DI-контейнер и передавать его. Также данный способ делает класс зависимым от конкретного DI-фреймворка, что тоже не есть хорошо.
+However, this approach is incorrect, because it complicates the testing of the class and creates a bunch of unnecessary code. If in the first case we could just pass mocked classes through the constructor, then now we need to create a DI-container and pass it. Also, this approach makes the class dependent on a particular DI-framework, which is also not good.
 
-Также обратите внимание на то, что перед тем как отобразить результаты, полученные от Interactor'а, мы переключаем поток на UI при помощи `observeOn(schedulersProvider.ui())`. Это сделано потому, что мы не знаем заранее в каком потоке нам придут данные.
+Also, note that before we display the results from Interactor, we switch the UI thread via `observeOn (schedulersProvider.ui())`, because we don't know in advance in what thread we receive the data
 
 #### Binding View with Presenter
 
-В контексте разработки под Android роль View на себя берет Activity (или Fragment), поэтому после создания интерфейса View, мы должны реализовать его нашей Activity или Fragment'е:
+In the context of Android developing, the Activity (or Fragment) acts as a View, so after creating the View interface, we need to implement it in our Activity or Fragment:
 
 ```java
 public class ArticlesListActivity extends MvpAppCompatActivity implements ArticlesListView {
@@ -335,13 +334,13 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 }
 ```
 
-Хочу заметить, что для правильной работы библиотеки Moxy, наша Activity должна обязательно наследоваться от класса **MvpAppCompatActivity** (или **MvpAppCompatFragment** в случае, если вы используете фрагменты). С помощью аннотации ```@InjectPresenter``` мы сообщаем Annotation Processor'у в какую переменную нужно "положить" Presenter. 
+For Moxy to correct work, our Activity must extend **MvpAppCompatActivity** (or **MvpAppCompatFragment** for Fragments). To inject an `ArticlesListPresenter` instance into `presenter` field we use ```@InjectPresenter``` annotation. 
 
-Так как конструктор нашего Presenter'а не пустой, а принимает на вход определенные параметры, нам нужно предоставить библиотеке объект Presenter'а. Мы делаем это при помощи метода ```provideArticlesListPresenter```, который мы пометили аннотацией ```@ProvidePresenter```. Как и во всех других случаях использования кодогенерации, переменные и методы, помеченные аннотациями, должны быть видны на уровне пакета, т. е. у них не должно быть модификаторов видимости (private, public, protected).
+Since Presenter has arguments we must to provide Presenter instance via ```provideArticlesListPresenter```, that we annotated with ```@ProvidePresenter```. Note that all annotated fields and methods must have public or package-private visibility.
 
 ### Packages organization
 
-Ниже представлен пример разбиения пакетов по фичам новостного приложения приложения: 
+We recommend using a *feature based* package structure for your code. Here is an example of package structure for a news app:
 
 ```
 com.mydomain
