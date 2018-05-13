@@ -1,6 +1,6 @@
 # Clean Architecture Manifest (v. 0.9.4)
 
-Here you will find description of main principles and rules, that are worth following in developing Android apps using Clean Architecture approach.
+Here you will find description of the main principles and rules, that are worth following in developing Android apps using Clean Architecture approach.
 
 ![CleanArchitectureManifest](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/CleanArchitectureManifest.png)
 
@@ -50,7 +50,7 @@ The sense of this principle is in the separation whole app code into layers. In 
 
 **2.Inversion of Control**
 
-According to this principle, domain layer must not depends on outer ones. That is, classes from outer layers must not be used in the domain layer. Interaction with outer layers is implemented through interfaces. Declaration of the interfaces contains in domain layer and implementation contains in outer ones.
+According to this principle, domain layer must not depends on outer ones. That is, classes from outer layers must not be used in the domain layer. Interaction with outer layers is implemented through interfaces. Declaration of the interfaces contains in domain layer and their implementation contains in outer ones.
 
 Thanks to separation of concerns between classes we can easily change an application code and add new functional with modifying minimal number of classes. In addition we get testable code. Please note that building the right app architecture depends entirely on a developer experience.
 
@@ -83,7 +83,7 @@ As mentioned earlier, an app architecture based on Clean Architecture principles
 - domain
 - data
 
-Above presents layers interaction scheme. Those black arrows represent dependencies of some layers on others, and blue arrows represent data flow. As you can see, data and presentation layers depend on domain layer, i. e. they use his classes. But **domain** layer doesn't know anything about outer layers and uses only its own classes and interfaces. Next, we will explain each of those layers in more detail, and how they interact with each other.
+Above presents layers interaction scheme. Those black arrows represent dependencies of one layers on another, and blue arrows represent data flow. As you can see, data and presentation layers depend on domain layer, i. e. they use it's classes. But **domain** layer doesn't know anything about outer layers and uses only its own classes and interfaces. Next, we will explain each of those layers in more detail, and how they interact.
 
 As can be seen from the scheme, all three layers can exchange data. It is worth mentioning that direct interaction between **presentation** и **data** layers must not be allowed. Data flow should go from **presentation** layer to **data** layer through **domain** (this could be, for example, passing string with search query or user registration data). The same can happen and vice versa (for example, when we return search results).
 
@@ -91,15 +91,15 @@ As can be seen from the scheme, all three layers can exchange data. It is worth 
 
 ![DomainLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DomainLayer.png)
 
-**Business logic** is rules, that describe how a business works (for example, user can't make a purchase for more than there is on his account). Business logic does not depend on the implementation of the database or UI. Business logic changes only when business requirements change.
+**Business logic** is rules, that describe how a business works (for example, a user cannot make a purchase for a price that more than his account balance). Business logic does not depend on the implementation of the database or UI. Business logic changes only when business requirements change.
 
 Robert Martin divides business logic into two types: a specific for a concrete application and common for all apps (if you want to share your code between platforms).
 
-**Entity** - contain application independent business rules. 
+**Entity** - contains application independent business rules. 
 
 **Interactor** - an object that implements business logic for a specific application.
 
-But it's all in theory. In practice, only Interactors are used. At least I have not seen any applications that use Entity. By the way, many confuse Entity with DTO (Data Transfer Object). The fact is that the Entity of Clean Architecture is not exactly the Entity that we are used to seeing.
+But it's all in theory. In practice, only Interactors are used. At least I have not seen any applications that uses Entity. By the way, many confuse Entity with DTO (Data Transfer Object). The fact is that the Entity of Clean Architecture is not exactly the Entity that we are used to seeing.
 
 **Use Case** - is a series of operations to achieve a goal. Example of a use case for user registration:
 
@@ -168,12 +168,12 @@ As you can see, sometimes Interactor methods can not contain business logic at a
 
 If you notice, the Interactor methods return not just the result, but the classes of RxJava 2 (depending on the type of operation we use different classes - Single, Completable, etc.). This gives several advantages:
 
-1. You do not need to create listeners to get results.
+1. You don't need to create listeners to get results.
 2. It's easy to switch threads.
 3. It's easy to handle  errors.
 
 
-To switch the between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider'а](#schedulersprovider). It will help us in the future, when we want to test our code.
+To switch between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider'а](#schedulersprovider). It will help us in the future, when we want to test our code.
 
 ### Data layer
 
@@ -181,7 +181,7 @@ To switch the between threads, we use the` subscribeOn` method, as usual, but we
 
 This layer contains everything about storing and managing data. It could be database, SharedPreferences, network or file system, as well as caching logic.
 
-As a "bridge" between data and domain layer, there is Repository interface (in the original Uncle Bob's scheme it's called Gateway). The interface itself is stored in the Domain layer, but his implementation is stored in the Data layer. In doing so, domain layer classes don't know where the data comes from - from the database, the network or from somewhere else. That's why all caching logic should be contained in the data layer.
+As a "bridge" between data and domain layer, there is Repository interface (in the original Uncle Bob's scheme it's called Gateway). The interface itself is stored in the Domain layer, but it's implementation is stored in the Data layer. In doing so, domain layer classes don't know where the data comes from - from the database, the network or from somewhere else. That's why all caching logic should be contained in the data layer.
 
 #### Repository
 
@@ -231,7 +231,7 @@ So far we have described View interface, i. e. which View methods the Presenter 
 
 #### Presenter
 
-According to the MVP concept, View can not directly interact with the Model, so the bridge between them is Presenter. Presenter reacts to user actions that View has notified to it (such as pressing a button, list item or text input), and then decides what to do next. For example, it could be a data request from the model and display them in the View. Presenter example:
+According to the MVP concept, View can not directly interact with the Model, so the bridge between them is Presenter. Presenter reacts to user actions that View has notified to it (such as pressing a button, list item click or text input), and then decides what to do next. For example, it could be a data request from the model and display them in the View. Presenter example:
 
 ```java
 @InjectViewState
@@ -336,7 +336,7 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 
 For Moxy to correct work, our Activity must extend **MvpAppCompatActivity** (or **MvpAppCompatFragment** for Fragments). To inject an `ArticlesListPresenter` instance into `presenter` field we use ```@InjectPresenter``` annotation. 
 
-Since Presenter has arguments we must to provide Presenter instance via ```provideArticlesListPresenter```, that we annotated with ```@ProvidePresenter```. Note that all annotated fields and methods must have public or package-private visibility.
+Since Presenter has arguments we must provide Presenter instance via ```provideArticlesListPresenter```, that we annotated with ```@ProvidePresenter```. Note that all annotated fields and methods must have public or package-private visibility.
 
 ### Packages organization
 
