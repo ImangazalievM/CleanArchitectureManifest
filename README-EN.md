@@ -1,4 +1,4 @@
-# CleanArchitectureManifest (v 0.9.4)
+# Clean Architecture Manifest (v. 0.9.4)
 
 Here you will find description of main principles and rules, that are worth following in developing Android apps using Clean Architecture approach.
 
@@ -426,15 +426,15 @@ com.mydomain
 
 #### Router
 
-Т. к. Presenter содержит в себе логику реагирования на действия пользователя, то он также знает о том, на какой экран нужно перейти. Однако сам Presenter не может осуществлять переход на новый экран, т. к. для этого нам требуется Context. Поэтому за открытие нового экрана должна отвечать View. Для осуществления перехода на следующий экран мы должны вызвать метод View, например, **openProfileScreen()**, а уже в реализации самого метода осуществлять переход. Помимо данного подхода некоторые разработчики используют для навигации так называемый Router.
+Since Presenter decides what happens when you interact with the view, it also know what screen will be opened. But we can't open Activity from Presenter directly. There are two ways of solving this problem - call View method like **openProfileScreen()** and open new screen from Activity or use Router
 
-**Router** - класс, для осуществления переходов между экранами (активити или фрагментами).
+**Router** is a special class for navigating between screens (Activities or Fragments).
 
-Для реализации Router'а вы можете использовать библиотеку [Alligator](https://github.com/aartikov/Alligator).
+We recommend to use [Alligator](https://github.com/aartikov/Alligator) library for implementing navigation.
 
 #### Mapper
 
-**Mapper** - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД в модель бизнес-логики. Обычно они имеют название типа XxxMapper, и имеют единственный метод с названием map (иногда встречаются названия convert/transform), например:
+**Mapper** is special class for converting models between layers, for example, from DB model to Domain model. Usually they calles like XxxMapper and have single method with name map (or convert/transform), for example:
 
 ```java
 public class ArticleDbModelMapper {
@@ -454,11 +454,11 @@ public class ArticleDbModelMapper {
 }
 ```
 
-Т. к. слой **domain** ничего не знает о классах других слоев, то маппинг моделей должен выполняться во внешних слоях, т. е. репозиторием (при конвертации **data** > **domain** или **domain** > **data**) или презентером (при конвертации **domain** > **presentation** и наоборот) .
+Since domain layer doesn't know anything about classes from other layers, the mapping of models must be performed in the outer layers, i. e. in Repository (when mapping **data > domain** or **domain> data**) or in Presenter (when mapping **domain> presentation** and vice versa) .
 
 #### ResourceManager
 
-В некоторых случаях может потребоваться получить строку или число из ресурсов приложения в Presenter'е или слое **domain** . Однако, мы знаем, что они не должны напрямую взаимодействовать с фреймворком Android. Чтобы решить эту проблему мы можем создать специальную сущность ResourceManager, для доступа у внешним ресурсам. Для этого мы создаем интерфейс:
+I some cases we need to get a string or a number from resources and use it in Presenter or domain layer. But we know that we can't use Context class. To resolve this problem we must use special class that called ResourceManager. Let's create an interface for this one:
 
 ```java
 public interface ResourceManager {
@@ -470,7 +470,7 @@ public interface ResourceManager {
 }
 ```
 
-Сам интерфейс должен располагаться в слое **domain**. После этого в слое **presentation** мы создаем реализацию нашего интерфейса:
+This interface must be contained in domain layer. Then we create the interface implementation in presentation layer:
 
 ```java
 public class AndroidResourceManager implements ResourceManager {
@@ -495,7 +495,7 @@ public class AndroidResourceManager implements ResourceManager {
 }
 ```
 
-Далее мы должны связать интерфейс и реализацию нашего ResourceManager'а в ApplicationModule:
+After that we must bind the interface with it's implementation in ApplicationModule:
 
 ```java
 @Singleton
@@ -505,7 +505,7 @@ protected ResourceManager provideResourceManager(AndroidResourceManager resource
 }
 ```
 
-Теперь мы можем использовать ResourceManager в Presenter'е или Interactor'ах:
+Now we can use ResourceManager in our Presenters or Interactors:
 
 ```java
 @InjectViewState
@@ -528,11 +528,11 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 }
 ```
 
-Наверное, у внимательных читателей возник вопрос: почему мы используем класс **R** в Presenter'е? Ведь он также относится к Android? На самом деле, это не совсем так. Класс **R** вообще не использует никакие классы, и представляет из себя набор идентификаторов ресурсов. Поэтому, нет ничего плохого, чтобы использовать его в Presenter'е.
+Perhaps you have a question: "Why we can use **R** class in the Presenter?" Because it uses Android Framework. Actually, that's not entirely true. **R** class not use any class at all. So there is nothing bad with using **R** class in Presenter.
 
 #### SchedulersProvider
 
-Перед началом тестирования нам нужно сделать все операции синхронными. Для этого мы должны заменить все Scheduler'ы на **TestScheduler**, поэтому мы не устанавливаем Scheduler'ы напрямую через класс **Schedulers**, используем **SchedulersProvider**:
+To test our code we need make all operations synchronous. For that, we must replace all Schefulers to **TestScheduler**. For this reason, we set Schedulers through **SchedulersProvider**, but not directly.
 
 ```java
 public class SchedulersProvider {
@@ -564,7 +564,7 @@ public class SchedulersProvider {
 }
 ```
 
-Благодаря этому мы можем легко заменить Scheduler'ы на нужные нам, всего лишь создав наследника класса SchedulersProvider'а и переопределив методы:
+It allows easily replace Schedules by extending **SchedulersProvider** and overriding it's methods:
 
 ```java
 public class TestSchedulersProvider extends SchedulersProvider {
@@ -603,7 +603,7 @@ public class TestSchedulersProvider extends SchedulersProvider {
 }
 ```
 
-Далее, при самом тестировании, нам нужно будет лишь использовать TestSchedulersProvider вместо SchedulersProvider. Более подробно о тестировании кода с RxJava можно почитать [здесь](https://github.com/Froussios/Intro-To-RxJava/blob/master/Part%204%20-%20Concurrency/2.%20Testing%20Rx.md).
+Then, when testing we just need use TestSchedulersProvider instead of SchedulersProvider. More info about testing code with RxJava you can find [here](https://github.com/Froussios/Intro-To-RxJava/blob/master/Part%204%20-%20Concurrency/2.%20Testing%20Rx.md).
 
 ## Errors handling
 
@@ -676,8 +676,6 @@ public class ArticlesListPresenterTest {
 - Проверка результатов тестирования. Здесь мы проверяем, что у View были вызваны нужные методы и переданы аргументы.
 
 ### Domain layer testing
-
-В данном слое тестируюится классы Interactor'ов и Entity. Необходимо проверить, действительно ли бизнес-логика реализует требуемое поведение .
 
 [this chapter is in preparation]
 
