@@ -1,4 +1,4 @@
-# Clean Architecture Manifest (v. 0.9.4)
+# Clean Architecture Manifest (v. 0.9.5)
 
 Here you will find description of the main principles and rules, that are worth following in developing Android apps using Clean Architecture approach.
 

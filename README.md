@@ -1,4 +1,4 @@
-# Clean Architecture Manifest (v. 0.9.4)
+# Clean Architecture Manifest (v. 0.9.5)
 
 
 
