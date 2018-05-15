@@ -685,37 +685,27 @@ public class ArticlesListPresenterTest {
 
 ## Start a new application development using Clean Architecture
 
-Если вы начиначете разработку нового мобильного приложения, то лучше начать с создания пользовательского интерфейса, т. к. именно UI определяет 
-
 [this chapter is in preparation]
 
-## Migration project to Clean Architecture
+## Migration project to the Clean Architecture
 
 [this chapter is in preparation]
-
-#### Step 1: 
-
-#### Step 2: 
-
-#### Step 3:
 
 ## Clean Architecture FAQ
 
-#### Стоит ли переписывать весь проект при переносе проекта на Clean Architecture?
+#### Should I rewrite all project when I migrate to Clean Architecture
 
-Наверное, нет однозначного ответа на этот вопрос. Если проект большой и переход на Clean Architecture может длительный промежуток времени, то лучше переписывать код постепенно, используя подход, который мы описали выше. Если же проект простой и состоит из 2-3 экранов, а сроки не поджимают, то вы можете попробовать переписать проект с нуля.
+There is no definite answer on this question. If your project is big enough and migration to Clean Architecture take a lot of time, the best bet is to rewrite the project gradually, using approach that we have described above. But you can try to rewrite the project from scratch if your project is small (contains 2-3 screens) and you have enough time.
 
-В конце хочется привести поучительную историю про Netscape, который переписывали с нуля больше, чем три года - [Things You Should Never Do, Part I](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/)
+Certainly a cautionary tale about developers of Netscape, who decided to rewrite the code from scratch - [Things You Should Never Do, Part I](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i).
 
-#### Обязательно ли создавать отдельные сущности для каждого из слоев (Domain, Data, Presentaion)?
+#### Is it necessary to create separate models for each layer (Domain, Data, Presentaion)?
 
-Согласно принципам Clean Architecture, слой Domain ничего не должен знать о внешних слоях (Data и Presentation), но внешние слои без проблем могут использовать классы из слоя Domain. Следовательно, можно не создавать отдельные сущности для каждого из слоев, а использовать только те, что лежат в слое Domain. Однако, если их формат не совпадает с тем, что используется во внешних слоях, то нужно создать отдельную сущность. Также не следует использовать в моделях слоя Domain аннотации, которые требуются библиотекам, типа [Gson](https://github.com/google/gson) или [Room](https://developer.android.com/topic/libraries/architecture/room.html). В этом случае нужно создать отдельную сущность в слое Data.
+According to the principles of Clean Architecture, Domain layer should know nothing about outer layers (Data and Presentation), but outer layer can use classes from Domain layer. Consequently, yoг don't have to create separate models for each layer. However, if models for each layer are different, you must to create different classes. If you need to add annotations from libraries (for example, from Gson or Room) to models (without changing model structure), then you can add them directly to Domain-layer models, even though these are external libraries of Data layer, because creating separate models will be unnecessary duplication of code.
 
-[this chapter is in preparation]
+#### Do we need to create interfaces for Presenters and Interactors to improve code testability?
 
-#### Нужно ли создавать интерфейсы для классов Presenter и Interactor для улучшения тестируемости кода?
-
-Пример Presenter'а с интерфейсом:
+This is an example of Presenter with interface:
 
 ```java
 public interface LoginPresenter {
@@ -728,21 +718,21 @@ public class LoginPresenterImpl implements LoginPresenter {
 }
 ```
 
-Нет, интерфейсы для презентера и интерактора создавать не нужно. Это создает дополнительные сложности при разработке, при этом пользы от данного подхода практически нет. Вот лишь некоторые проблемы, которые порождает создаение лишних интерфейсов:
+No, you don't need to create interface for Presenters or Interactors, because it creates additional problems and has no advantages. There are some of the problems created by using redundant interfaces:
 
-- Если мы хотим добавить новый метод или изменить существующий, нам нужно изменить интерфейс. Помимо этого мы также должны изменить реализацию метода. Это занимает довольно времени, даже при использовании такой продвинутой IDE как Android Studio.
-- Использование дополнительных интерфейсов усложняет навигацию по коду. Если вы хотите перейти к реализации метода Presenter'а из Activity (т. е. реализации View), то вы переходите к интерфейсу Presenter'а.
-- Интерфейс никак не улучшает тестируемость кода. Вы с легкостью можете заменить класс Presenter'а на mock, используя любую библиотеку для mock'ирования.
+- If we want to add new method or change existing one, we need to change the interface. Also we need to change implementation of the interface. It takes quite some time, even using such a powerful IDE as Android Studio.
+- Using of additional interfaces makes code navigation more difficult. For example, if you want to open an implementation of a Presenter method from Activity, then you go to a method definition in the interface.
+- The interface doesn't improve code testability. You can easily replace Presenter's implementation to it's mock, using any mocking library.
 
-Более подробно можете почитать об этом в следующих статьях:
+You can read more about this topic in the following articles:
 
 - [Interfaces for presenters in MVP are a waste of time!](http://blog.karumi.com/interfaces-for-presenters-in-mvp-are-a-waste-of-time)
-- [Франкен-код или франкен-дизайн](https://plus.google.com/u/0/+SergeyTeplyakov/posts/gRaqrqaiGbe)
-- [Управление зависимостями](http://sergeyteplyakov.blogspot.ru/2012/11/blog-post.html)
 
-#### Как передать аргументы в Presenter, если его инстанс создает DI-контейнер?
+#### How to pass arguments into Presenter, when it's instance created via DI-container?
 
 Часто при создании презентера возникает необходимость передать дополнительные аргументы. Например, мы хотим передать идентфикатор статьи, чтобы получить её содержимое от сервера. Чтобы сделать это, нам необходимо создать отдельный модуль для Presenter'а и передать аргументы туда:
+
+Often when creating a presenter, we want to pass arguments to constructor For example, we want to pass an article ID to get its content from the server. To do this, we need to create a separate module for Presenter and pass the arguments there:
 
 ```java
 @Module
@@ -763,14 +753,14 @@ public class ArticleDetailsModule {
 }
 ```
 
-Далее нам нужно добавить наш модуль в Component:
+Next we need to add this module to the Component:
 
 ```java
 @Component(dependencies = ApplicationComponent.class, modules = ArticleDetailsModule.class)
 public interface ArticleDetailsComponent {
 ```
 
-При создании Component'а мы должны передать наш модуль с идентификатором:
+When creating the Component we provide our module with arguments:
 
 ```java
 long articleId = ...
@@ -781,7 +771,7 @@ ArticleDetailsComponent component = DaggerArticleDetailsComponent.builder()
     .build();
 ```
 
-Теперь мы можем получить наш идентификатор через конструктор:
+Now we can get our identifier through constructor:
 
 ```java
 @Inject
@@ -791,9 +781,9 @@ public UserFollowersPresenter(ArticleDetailsInteractor interactor, long articleI
 }
 ```
 
-Теперь представим, что помимо идентфикатора статьи, мы хотим передать ID пользователя, который так же имеет тип long. Если мы попытаемся создать ещё один provide-метод в нашем модуле, Dagger выдаст ошибку, о том, что типы совпадают и он не знает какой из них является идентфикатором статьи, а какой идентфикатором пользователя. 
+Let's suppose that in addition an article ID, we want to pass an user ID, that also has type "long". If we try to create another provide-method in our module, Dagger will give an error message, because it doesn't know which method provides an user ID or an article ID.
 
-Чтобы исправить это, нам необходимо создать  Qualifier-аннотации,  которые будут указывать Dagger'у "who is who":
+To fix this, we need to create **Qualifier** annotations that will tell Dagger "who is who":
 
 ```java
 @Qualifier
@@ -809,7 +799,7 @@ public @interface UserId {
 }
 ```
 
-Добавляем аннотации к нашим provide-методам:
+Add annotations to our provide-methods:
 
 ```java
 @ArticleId
@@ -827,11 +817,11 @@ long provideUserId() {
 }
 ```
 
-Также нужно пометить аннотациями аргументы конструктора:
+Also, we need to mark the constructor arguments with annotations:
 
 ```java
 @Inject
 public UserFollowersPresenter(ArticleDetailsInteractor interactor, @ArticleId long articleId, @UserId long userId) 
 ```
 
-Готово. Теперь Dagger сможет верно расставить аргументы в конструктор.
+Done. Now Dagger can pass the arguments correctly.
