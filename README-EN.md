@@ -611,37 +611,37 @@ Then, when testing we just need use TestSchedulersProvider instead of Schedulers
 
 ## Testing
 
-Одним из самых главных преимуществ является то, что мы можем покрыть тестами намного больший функционал приложения, за счет разбиения кода на мелкие классы, каждый из которых выполняет строго определенную задачу. Благодаря принципу инверсии зависимостей, используемому в чистой архитектуре мы можем с легкостью подменять реализацию тех или иных классов на фейковые, которые реализуют нужное нам поведение.
+One key advantage of Clean Architecture is that we can cover with tests much more functionality of the application through the code into small classes, each of which performs a strictly defined task. Thanks to the Inversion of Control principle, that used in Clean Architecture, we can easily replace the implementation classes with fake ones that implement the behavior we want.
 
-Прежде чем начать писать тесты, мы должны ответить себе на два вопроса:
+Before we start writing tests, we must answer ourselves to two questions:
 
-- что мы хотим тестировать?
-- как мы будем это тестировать?
+- What do we want to test?
+- How will we test this?
 
-Что мы хотим тестировать:
+What we want to test:
 
-- Мы хотим проверить нашу бизнес-логику независимо от какого-либо фреймворка или библиотеки.
-- Мы хотим протестировать нашу интеграцию с API.
-- Мы хотим протестировать нашу интеграцию с нашей системой персистентности.
-- Мы хотим протестировать некоторые общие компоненты пользовательского интерфейса.
+- We want to test our business logic regardless of any framework or library.
+- We want to test our integration with the API.
+- We want to test integration with our persistence system.
+- Everything that contains conditions.
 
-Что мы НЕ должны тестировать:
+What we should NOT test:
 
-- Сторонние библиотеки (мы предполагаем, что они работают правильно, потому что уже протестированы разработчиками)
-- Тривиальный код (например, геттеры и сеттеры)
+- Third-party libraries (we assume that they work correctly, because they have already been tested by the developers)
+- Trivial code (for example, getters and setters)
 
-Теперь, давайте разберём то, как мы будем тестировать каждый из слоев.
+Let's take a closer look at how we will test each of layers.
 
 ### Presentation layer testing
 
-Данный слой включает в себя 2 типа тестов:  Unit-тесты и UI-тесты.
+This layer include 2 types of tests:  Unit-tests и UI-tests.
 
-- Unit-тесты используются для тестирования Presenter'ов.
-- UI-тесты используются для тестирования Activity (проверяется корректность отображения элементов и т. д.).
+- Unit-tests are used for testing Presenters.
+- UI-tests  are used for testing Activities (to check if UI works correctly).
 
-Существуют различные соглашения по именованию тестовых методов. Например, в этой [статье](https://dzone.com/articles/7-popular-unit-test-naming) описаны некоторые из них. В примерах, которые я буду приводить далее, я не буду придерживаться какого-либо соглашения. В общем, нет большой разницы, как их называть. Самое главное понять из названия, что тестирует наш метод и что мы хотим получить в результате. 
+There are different naming conventions for unit tests. For example, this](https://dzone.com/articles/7-popular-unit-test-naming) article describes some of them. In my examples of tests I will not adhere to any agreement. The most important thing is to understand what the tests are doing and what we want to get as a result.
 
-Давайте рассмотрим пример теста для **ArticlesListPresenter**:
+Let us take the example of test for **ArticlesListPresenter**:
 
 ```java
 public class ArticlesListPresenterTest {
@@ -669,11 +669,11 @@ public class ArticlesListPresenterTest {
 }
 ```
 
-Как видите, мы разделили код теста на три части:
+As you can see, we divided the test code into three parts:
 
-- Подготовка к тестированию. Здесь мы инициализируем объекты для тестирования, подготавливаем тестовые данные, а также предопределяем поведение моков.
-- Само тестирование. 
-- Проверка результатов тестирования. Здесь мы проверяем, что у View были вызваны нужные методы и переданы аргументы.
+- Preparation for testing. Here we initialize the objects for testing, prepare the test data, and also define the behavior of the mocks.
+- Testing itself
+- Checking the test results. Here we check that View methods have been called with necessary arguments .
 
 ### Domain layer testing
 
