@@ -173,7 +173,7 @@ If you notice, the Interactor methods return not just the result, but the classe
 3. It's easy to handle errors.
 
 
-To switch between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider'а](#schedulersprovider). It will help us in the future, when we want to test our code.
+To switch between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider](#schedulersprovider). It will help us in the future, when we want to test our code.
 
 ### Data layer
 
@@ -729,8 +729,6 @@ You can read more about this topic in the following articles:
 - [Interfaces for presenters in MVP are a waste of time!](http://blog.karumi.com/interfaces-for-presenters-in-mvp-are-a-waste-of-time)
 
 #### How to pass arguments into Presenter, when it's instance created via DI-container?
-
-Часто при создании презентера возникает необходимость передать дополнительные аргументы. Например, мы хотим передать идентфикатор статьи, чтобы получить её содержимое от сервера. Чтобы сделать это, нам необходимо создать отдельный модуль для Presenter'а и передать аргументы туда:
 
 Often when creating a presenter, we want to pass arguments to constructor For example, we want to pass an article ID to get its content from the server. To do this, we need to create a separate module for Presenter and pass the arguments there:
 
