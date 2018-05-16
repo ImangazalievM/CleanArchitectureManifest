@@ -1,123 +1,123 @@
-# Clean Architecture Manifest (v. 0.9.5)
-
-
-
-Здесь вы найдете описание основных принципов и правил, которыми стоит руководствоваться при разработке Android-приложений с использованием чистой архитектуры. 
-
 ![CleanArchitectureManifest](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/CleanArchitectureManifest.png)
 
-## Содержание
+# Clean Architecture Manifest (v. 0.9.5)
 
-- [Введение](#Введение)
-- [Слои и инверсия зависимостей](#Слои-и-инверсия-зависимостей)
-  - [Слой бизнес-логики (Domain)](#Слой-бизнес-логики-domain)
-  - [Слой работы с данными (Data)](#Слой-работы-с-данными-data)
+Here you will find description of the main principles and rules, that are worth following in developing Android apps using Clean Architecture approach.
+
+**Translations:**
+
+[English](/README.md) | [Русский](/README-RU.md)
+
+If you want to translate this document to your language, please visit [this page](contributing.md).
+
+## Table of contents
+
+- [Introduction](#introduction)
+- [Layers and Inversion of Control](#layers-and-inversion-of-control)
+  - [Domain layer](#domain-layer)
+  - [Data layer](#data-layer)
     - [Repository](#repository)
-  - [Слой отображения (Presentation)](#Слой-отображения-presentation)
+  - [Presentation layer](#presentation-layer)
     - [Model](#model)
     - [View](#view)
     - [Presenter](#presenter)
-    - [Связывание View с Presenter'ом](#Связывание-view-c-presenterом)
-- [Разбиение классов по пакетам](#Разбиение-классов-по-пакетам)
-- [Дополнительные сущности, используемые на практике](#Дополнительные-сущности-используемые-на-практике)
+    - [Binding View with Presenter](#binding-view-with-presenter)
+- [Additional entities used in practice](#additional-entities-used-in-practice)
   - [Router](#router)
   - [Mapper](#mapper)
   - [ResourceManager](#resourcemanager)
   - [SchedulersProvider](#schedulersprovider)
-- [Обработка ошибок](#Обработка-ошибок)
-- [Тестирование](#Тестирование)
-- [Перенос на Clean Architecture существующих проектов](#Перенос-на-clean-architecture-существующих-проектов)
-- [FAQ по Clean Architecture](#faq-по-clean-architecture)
+- [Errors handling](#errors-handling)
+- [Testing](#testing)
+- [Start a new application development using Clean Architecture](#start-a-new-application-development-using-clean-architecture)
+- [Migration project to Clean Architecture](#migration-project-to-clean-architecture)
+- [Clean Architecture FAQ](#clean-architecture-faq)
 
-## Введение
+## Introduction
 
-Clean Achitecture — способ построения архитектуры приложения, [предложенный](https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html) Робертом Мартином (который также известен как дядюшка Боб - Uncle Bob) в 2012 году. 
+Clean Architecture is an approach suggested by Robert Martin in 2012.
 
-Clean Architecture включает в себя два основных принципа:
+Clean Architecture includes two main principles:
 
-1. **Разделение на слои** 
-2. **Инверсия зависимостей**
+1. Separation into layers
+2. Inversion of Control
 
-Давайте расшифруем каждый из них.
+Let's look at each of them.
 
-**Разделение на слои**
+**1. Separating into layers**
 
-Суть принципа заключается в разделении всего кода приложения на слои. Всего мы имеем три слоя: 
+The sense of this principle is in the separation whole app code into layers. In general we have three layers:
 
-- слой отображения
+1. Presentation layer
 
+2. Domain layer (business logic) 
 
-- слой бизнес логики
-- слой работы с данными
+3. Data layer
 
-Самым главным слоем является слой бизнес логики. Особенность данного слоя заключается в том, что он не зависит ни от каких внешних библиотек или фреймворков. Это достигается за счет *инверсии зависимостей*.
+**2.Inversion of Control**
 
-**Инверсия зависимостей**
+According to this principle, domain layer must not depends on outer ones. That is, classes from outer layers must not be used in the domain layer. Interaction with outer layers is implemented through interfaces. Declaration of the interfaces contains in domain layer and their implementation contains in outer ones.
 
-Согласно данному принципу слой бизнес-логики не должен зависеть от внешних. То есть классы из внешних слоев не должны использоваться в классах бизнес-логики. Взаимодействие с внешними слоями происходит через интерфейсы, которые реализуют классы внешних слоев. 
+Thanks to separation of concerns between classes we can easily change an application code and add new functional with modifying minimal number of classes. In addition we get testable code. Please note that building the right app architecture depends entirely on a developer experience.
 
-Благодаря разделению ответственности между классами мы легко можем изменять код приложения, а также добавлять новый функционал, затрагивая при этом минимальное количество классов. Помимо этого мы получаем легко тестируемый код. Стоит заметить, что построение правильной архитектуры целиком и полностью зависит от самого разработчика и его опыта.
+Advantages of Clean Architecture:
 
-Преимущества чистой архитектуры:
+- independent of UI, DB or frameworks
+- allows you to add new features faster
+- a higher percentage of test coverage
+- easy packages structure navigation
 
-- независимость от UI, БД и фреймворков
-- позволяет быстрее добавлять новые функции
-- более высокий процент покрытия кода тестами
-- повышенная простота навигации по структуре пакетов
+Disadvantages:
 
-Недостатки чистой архитектуры:
+- large number of classes 
+- hard for beginners to understand 
 
-- большое количество классов
-- довольно высокий порог вхождения и, зачастую, неправильное понимание на первых порах
-
-**Внимание:** перед прочтением данного документа, настоятельно рекомендую ознакомиться  со следующими темами (иначе, вы ничего не поймете):
+**Attention:** this article assumes knowledge on the following topics: 
 
 - Dagger 2
 - RxJava 2
 
-Очень желательно, чтобы у вас был практический опыт их использования, так вы быстрее войдете в курс дела. Если вы уже знакомы с ними, то можете смело приступать к прочтению. Всё объяснение темы Clean Architecture будет строиться вокруг новостного приложения, которое мы, в теории, хотели бы создать.
+**P. S.** I developed an application to demonstrate the use of Clean Architecture in practice. You can find the source code here - [Bubbble](https://github.com/ImangazalievM/Bubbble).
 
-**P. S.** Я разработал приложение, чтобы продемонстрировать использование чистой архитектуры на практике. Исходный код вы можете найти здесь - [Bubbble](https://github.com/ImangazalievM/Bubbble).
-
-## Слои и инверсия зависимостей
+## Layers and Inversion of Control
 
 ![CleanArchitectureLayers](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/CleanArchitectureLayers.png)
 
-Как уже говорилось ранее, архитектуру приложения, построенную по принципу Clean Architecture можно разделить на три слоя: 
+As mentioned earlier, an app architecture based on Clean Architecture principles, can be divided into three layers:
 
-- слой отображения (presentation)
-- слой бизнес-логики (domain)
-- слой работы с данными (data)
+- presentation
+- domain
+- data
 
-Выше представлена схема того, как эти слои взаимодействуют. Черными стрелками обозначены зависимости одних слоев от других, а синими - поток данных. Как видите, слои **data** и **presentation** зависят от **domain**, т. е. они используют его классы. Сам же слой **domain** ничего не знает о внешних слоях и использует только собственные классы и интерфейсы. Далее мы разберем более подробно каждый из этих слоев, и то, как они взаимодействуют между собой.
+Above presents layers interaction scheme. Those black arrows represent dependencies of one layers on another, and blue arrows represent data flow. As you can see, data and presentation layers depend on domain layer, i. e. they use it's classes. But **domain** layer doesn't know anything about outer layers and uses only its own classes and interfaces. Next, we will explain each of those layers in more detail, and how they interact.
 
-Как видно из схемы, все три слоя могут обмениваться данными. Следует отметить, что нельзя допускать прямого взаимодействия между слоями  **presentation** и **data**. Поток данных должен идти от слоя **presentation** к **domain**, а от него к слою **data** (это может быть, например, передача строки с поисковым запросом или регистрационные данные пользователя). То же самое может происходить и в обратном направлении (например, при передаче списка с результатами поиска). 
+As can be seen from the scheme, all three layers can exchange data. It is worth mentioning that direct interaction between **presentation** и **data** layers must not be allowed. Data flow should go from **presentation** layer to **data** layer through **domain** (this could be, for example, passing string with search query or user registration data). The same can happen and vice versa (for example, when we return search results).
 
-## Слой бизнес-логики (Domain)
+## Domain layer
 
 ![DomainLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DomainLayer.png)
 
-**Бизнес-логика** - это правила, описывающие, как работает бизнес (например, пользователь не может совершить покупку на сумму больше, чем есть на его счёте). Бизнес-логика не зависит от реализации базы данных или интерфейса пользователя. Бизнес-логика меняется только тогда, когда меняются требования бизнеса, и не зависит от используемой СУБД или интерфейса пользователя. 
+**Business logic** is rules, that describe how a business works (for example, a user cannot make a purchase for a price that more than his account balance). Business logic does not depend on the implementation of the database or UI. Business logic changes only when business requirements change.
 
-Роберт Мартин разделяет бизнес-логику на два вида: специфичную для конкретного приложения и общую для всех приложений (в том случае, если вы хотите сделать ваш код общим между приложениями под разные платформы). 
+Robert Martin divides business logic into two types: a specific for a concrete application and common for all apps (if you want to share your code between platforms).
 
-**Бизнес объект (Entity)** - хранят бизнес-логику общую для всех приложений. 
+**Entity** - contains application independent business rules. 
 
-**Interactor** – объект, реализующий бизнес-логику специфичную для конкретного приложения.
+**Interactor** - an object that implements business logic for a specific application.
 
-Но это все в теории. На практике же используются только Interactor'ы. По крайней мере, мне не встречались приложения, использующие Entity. Кстати, многие путают Entity с DTO (Data Transfer Object). Дело в том, что Entity из Clean Architecture - это не совсем те Entity, которые мы привыкли видеть. [Данная](https://habrahabr.ru/company/mobileup/blog/335382/) статья проливает свет на этот вопрос, а также на многие другие.
+But it's all in theory. In practice, only Interactors are used. At least I have not seen any applications that uses Entity. By the way, many confuse Entity with DTO (Data Transfer Object). The fact is that the Entity of Clean Architecture is not exactly the Entity that we are used to seeing.
 
-**Сценарий использования (Use Case)** - набор операций для выполнения какой-либо задачи.  Пример сценария использования при регистрации пользователя:
+**Use Case** - is a series of operations to achieve a goal. Example of a use case for user registration:
 
-> 1. Проверяем данные пользователя
-> 2. Отправляем данные на сервер для регистрации
-> 3. Сообщаем пользователю об успешной регистрации или ошибке
+> 1. The system checks user data
+> 2. The system sends data to the server for registration
+> 3. The system informs the user about the successful registration or error
 >
-> Исключительные ситуации:
+> Exceptional situations:
 >
-> 1. Пользователь ввел неверные данные (выдаем ошибку)
+> 1. The user entered incorrect data (the system shows an error)
 
-Давайте теперь посмотрим как это выглядит на практике. Роберт Мартин предлагает создавать для каждого сценария использования отдельный класс, который имеет один метод для его запуска. Пример такого класса:
+Let's see how it looks like in practice. Robert Martin suggests to create separate class for each use case, that  has single method to run it. An example of such a class:
 
 ```java
 public class RegisterUserInteractor {
@@ -143,7 +143,7 @@ public class RegisterUserInteractor {
 }
 ```
 
-Однако практика показывает, что при таком подходе получается огромное количество классов, с малым количеством кода. Более правильным будет создание одного Interactor'а на один экран, методы которого реализуют определенный сценарий, например:
+However, practice shows that with this approach, you get a huge number of classes, with a small amount of code. A better approach would be to create single Interactor for one screen, the methods of which implement a certain use case. For example:
 
 ```java
 public class ArticleDetailsInteractor {
@@ -170,29 +170,28 @@ public class ArticleDetailsInteractor {
 }
 ```
 
-Как видите иногда методы Interactor'а могут и вовсе не содержать бизнес-логики, а методы Interactor'а выступают в качестве прослойки между Repository и Presenter'ом.
+As you can see, sometimes Interactor methods can not contain business logic at all, and Interactor methods act as a proxy between Repository and Presenter.
 
-Если вы заметили, методы Interactor'а возвращают не просто результат, а классы RxJava 2 (в зависимости от типа операции мы используем разные классы - Single, Completable и т. д.).  Это дает несколько преимуществ:
+If you notice, the Interactor methods return not just the result, but the classes of RxJava 2 (depending on the type of operation we use different classes - Single, Completable, etc.). This gives several advantages:
 
-1. Не нужно создавать слушатели для получения результата.
-2. Легко переключать потоки.
-3. Легко обрабатывать ошибки.
+1. You don't need to create listeners to get results.
+2. It's easy to switch threads.
+3. It's easy to handle errors.
 
-Для переключения потоков мы используем, как обычно, метод subscribeOn, однако мы получаем Scheduler не через статические методы класса Schedulers, а при помощи [SchedulersProvider'а](#schedulersprovider). В будущем это поможет нам при тестировании.
 
-### Слой работы с данными (Data)
+To switch between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider](#schedulersprovider). It will help us in the future, when we want to test our code.
+
+### Data layer
 
 ![DataLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/DataLayer.png)
 
+This layer contains everything about storing and managing data. It could be database, SharedPreferences, network or file system, as well as caching logic.
 
-
-В данном  слое содержится всё, что связано с хранением данных и управлением ими. Это может работа с базой данных, SharedPreferences, сетью или файловой системой, а также логика кеширования, если она имеется.
-
-"Мостом" между слоями data и domain является интерфейс Repository (в оригинальной схеме дядюшки Боба он называется Gateway). Сам интерфейс находится в слое domain, а уже реализация располагается в слое data. При этом классы domain-слоя не знают откуда берутся данные - из БД, сети или откуда-то ещё. Именно поэтому вся логика кеширования должна содержаться в data-слое.
+As a "bridge" between data and domain layer, there is Repository interface (in the original Uncle Bob's scheme it's called Gateway). The interface itself is stored in the Domain layer, but it's implementation is stored in the Data layer. In doing so, domain layer classes don't know where the data comes from - from the database, the network or from somewhere else. That's why all caching logic should be contained in the data layer.
 
 #### Repository
 
-**Repository** - представляет из себя интерфейс, с которым работает Interactor. В нем описывается какие данные хочет получать Interactor от внешних слоев. В приложении может быть несколько репозиториев, в зависимости от задачи. Например, если мы делаем  новостное приложение, репозиторий работающий со статьями может называться ArticleRepository, а репозиторий для работы с комментариями CommentRepository. Пример репозитория, работающего со статьями:
+**Repository** - is the interface with which Interactor works. It describes what data Interactor wants to obtain from external layers. There may be several repositories in the application, depending on the task. For example, if we develop a news application, the repository that works with articles can be called ArticleRepository, and a repository for working with comments will be called CommentRepository . An example of a repository that works with articles:
 
 ```java
 public interface ArticleRepository {
@@ -208,21 +207,21 @@ public interface ArticleRepository {
 }
 ```
 
-### Слой отображения (Presentation)
+### Presentation layer
 
 ![PresentationLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png)
 
-Слой представления содержит все компоненты, которые связаны с UI, такие как View-элементы, Activity, Fragment'ы и т. д. Помимо этого здесь содержатся Presenter'ы и View (или ViewModel'и при использовании MVVM). В данном туториале для реализации слоя presentation будет использован шаблон MVP, но вы можете выбрать любой другой (MVVM, MVI).
+Presentation layer contains all UI components, such as views, Activities, Fragments, etc. Also, it contains Presenters and Views (or ViewModels if you use MVVM). In this tutorial we will use MVP (Model-View-Presenter) pattern, but you can choose other one (MVVM, MVI).
 
-Для более удобной связки View и Presenter мы будем использовать библиотеку [Moxy](https://github.com/Arello-Mobile/Moxy). Она помогает решить многие проблемы, связанные с жизненным циклом Activity или Fragment'а. Moxy имеет базовые классы, такие как ```MvpView``` и ```MvpPresenter``` от которых должны наследоваться наши View и Presenter. Для избежания написания большого количества кода по связыванию View и Presenter, Moxy использует кодогенерацию. Для правильной работы кодогенерации мы должны использовать специальные аннотации, которые предоставляет нам Moxy. Более подробную информацию о библиотеке можно найти [здесь](https://habrahabr.ru/post/276189/).
+The library helps to solve many problems related with Activity lifecycle. Moxy has base classes, there are `MvpView` and `MvpPresenter`, that must be extended by all your Views and Presenters. To save you from coding boilerplate classes Moxy uses Annotation Processing. For the correct work of code generation, you must use the special annotations provided by Moxy. More information about the library you can find [here](https://medium.com/redmadrobot-mobile/android-without-lifecycle-mpvsv-approach-with-moxy-6a3ae33521e).
 
 #### Model
 
-MVP расшифровывается как Model-View-Presenter (модель-представление-презентер). Model содержит в себе бизнес-логику и код по работе с данными.  Т. к. мы используем связку Clean Architecture + MVP, то Model у нас является код находящийся в слоях Data (работа с данными) и Domain (бизнес-логика). Следовательно в слое Presentation остаются лишь два компонента - View и Presenter.
+Model contains the business-logic and code for managing data. And because we use Clean Architecture + MVP, as Model will act Data and Domain layers.
 
 #### View
 
-View отвечает за то, каким образом данные будут показаны пользователю. В случае с Android в качестве View выступает Activity или Fragment. Также View сообщает о действиях пользователя Presenter'у, будь то нажатие на кнопку или ввод текста. Пример View:
+View is responsible for how the data will be shown to the user. In the case of Android, View must be implemented by an Activity or Fragment. Also, View informs the Presenter of user interaction, such as button click or text input. There is example of View:
 
 ```java
 public interface ArticlesListView extends MvpView {
@@ -234,11 +233,11 @@ public interface ArticlesListView extends MvpView {
 }
 ```
 
-Пока мы описали лишь интерфейс View, т. е. какие команды Presenter может отдавать View. Обратите внимание, что наш интерфейс наследуется от интерфейса **MvpView**, входящего в библиотеку Moxy. Это является обязательным условием для корректной работы библиотеки.
+So far we have described View interface, i. e. which View methods the Presenter can call. Note that our View is inherited from the **MvpView**, which is part of the Moxy library. That is a must for correct library work.
 
 #### Presenter
 
-Согласно концепции MVP, View не может напрямую взаимодействовать с Model, поэтому связующим звеном между ними является Presenter. Presenter реагирует на действия пользователя, о которых ему сообщила View  (такие как нажатие на кнопку, пункт списка или ввод текста), после чего принимает решения о том, что делать дальше. Например, это может быть запрос данных у модели и отображение их во View. Пример Presenter'а:
+According to the MVP concept, View can not directly interact with the Model, so the bridge between them is Presenter. Presenter reacts to user actions that View has notified to it (such as pressing a button, list item click or text input), and then decides what to do next. For example, it could be a data request from the model and display them in the View. Presenter example:
 
 ```java
 @InjectViewState
@@ -274,9 +273,9 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 }
 ```
 
-Все необходимые классы для работы Presenter'а (как и всех остальных классов) мы передаем через конструктор. Этот способ так и называется - внедрение через конструктор.
+All the necessary classes we pass through the Presenter's constructor. It's actually called "constructor injection".
 
-При создании объекта Presenter'а мы должны передать ему запрашиваемые конструктором зависимости. Если их будет много, то создание Presenter'а будет довольно сложным делом. Чтобы не делать этого вручную, мы доверим это дело Component'у. 
+When creating the Presenter's object we must pass dependencies required by the constructor. If there are a lot of them, the creation of Presenter will be rather difficult. Because we don't want to do this manually, we will delegate this work to the Component.
 
 ```java
 @Presenter
@@ -288,9 +287,9 @@ public interface ArticlesListComponent {
 }
 ```
 
-Он подставит нужные зависимости, а нам нужно будет лишь получить инстанс Presenter'а вызвав  метод **getPresenter()**. Если у вас возник вопрос "А как в таком случае передавать  аргументы в Presenter?", то загляните в FAQ - там подробно описан этот вопрос.
+It will supply the necessary dependencies, and we need only get the Presenter instance by calling the **getPresenter()** method. If you have a question, "How do you pass arguments to Presenter then?", then look in the FAQ - there is a detailed description of this issue.
 
-Иногда можно встретить такое, что в конструктор передается DI-контейнер (Component), после чего все необходимые зависимости внедряются в поля:
+Sometimes you can find the code in which the DI-container (Component) is passed to the constructor, after which all the necessary dependencies inject in the fields:
 
 ```java
 @Inject
@@ -299,16 +298,15 @@ ArticlesListInteractor articlesListInteractor;
 public VisitsPresenter(ArticlesListPresenterComponent component) {
 	component.inject(this);
 }
-
 ```
 
-Однако, данный способ является неправильным, т. к. усложняет тестирование класса и создает кучу ненужного кода. Если в первом случае мы сразу могли передать mock'и классов через конструктор, то теперь нам нужно создать DI-контейнер и передавать его. Также данный способ делает класс зависимым от конкретного DI-фреймворка, что тоже не есть хорошо.
+However, this approach is incorrect, because it complicates the testing of the class and creates a bunch of unnecessary code. If in the first case we could just pass mocked classes through the constructor, then now we need to create a DI-container and pass it. Also, this approach makes the class dependent on a particular DI-framework, which is also not good.
 
-Также обратите внимание на то, что перед тем как отобразить результаты, полученные от Interactor'а, мы переключаем поток на UI при помощи `observeOn(schedulersProvider.ui())`. Это сделано потому, что мы не знаем заранее в каком потоке нам придут данные.
+Also, note that before we display the results from Interactor, we switch the UI thread via `observeOn (schedulersProvider.ui())`, because we don't know in advance in what thread we receive the data
 
-#### Связывание View с Presenter'ом
+#### Binding View with Presenter
 
-В контексте разработки под Android роль View на себя берет Activity (или Fragment), поэтому после создания интерфейса View, мы должны реализовать его в нашей Activity или Fragment'е:
+In the context of Android developing, the Activity (or Fragment) acts as a View, so after creating the View interface, we need to implement it in our Activity or Fragment:
 
 ```java
 public class ArticlesListActivity extends MvpAppCompatActivity implements ArticlesListView {
@@ -342,13 +340,13 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 }
 ```
 
-Хочу заметить, что для правильной работы библиотеки Moxy, наша Activity должна обязательно наследоваться от класса **MvpAppCompatActivity** (или **MvpAppCompatFragment** в случае, если вы используете фрагменты). С помощью аннотации ```@InjectPresenter``` мы сообщаем Annotation Processor'у в какую переменную нужно "положить" Presenter. 
+For Moxy to correct work, our Activity must extend **MvpAppCompatActivity** (or **MvpAppCompatFragment** for Fragments). To inject an `ArticlesListPresenter` instance into `presenter` field we use ```@InjectPresenter``` annotation. 
 
-Так как конструктор нашего Presenter'а не пустой, а принимает на вход определенные параметры, нам нужно предоставить библиотеке объект Presenter'а. Мы делаем это при помощи метода ```provideArticlesListPresenter```, который мы пометили аннотацией ```@ProvidePresenter```. Как и во всех других случаях использования кодогенерации, переменные и методы, помеченные аннотациями, должны быть видны на уровне пакета, т. е. у них не должно быть модификаторов видимости (private, public, protected).
+Since Presenter has arguments we must provide Presenter instance via ```provideArticlesListPresenter```, that we annotated with ```@ProvidePresenter```. Note that all annotated fields and methods must have public or package-private visibility.
 
-### Разбиение классов по пакетам
+### Packages organization
 
-Ниже представлен пример разбиения пакетов по фичам новостного приложения: 
+We recommend using a *feature based* package structure for your code. Here is an example of package structure for a news app:
 
 ```
 com.mydomain
@@ -412,37 +410,37 @@ com.mydomain
 |     |     |---- ArticleListComponent
 ```
 
-Прежде чем делить код по фичам, мы разделили его на слои. Данный подход позволяет сразу определить к какому слою относится тот или иной класс. Если вы заметили, классы слоя **data** разбиты немного не так, как в слоях **domain**, **presentation** и **di**. Здесь вместо фич приложения мы выделили типы источников данных - сеть, база данных, файловая система. Это связано с тем, что все фичи используют практически одни и те же классы (например, **NewsApiService**) и их не имеет смысла разбивать по фичам.
+First of all, we divided the code into layers: data, domain, presentation. Also we created a separate package for the DI code. The packages **domain**, **presentation** and **di** are divided by features, and the **data** package is divided by data source type (network, database, file system). This is because all features use the same classes (for example, **NewsApiService**) and it will be very difficult to divide them into features.
 
-В пакетах с именем **global** хранятся общие классы, которые используются в нескольких фичах. Например, в пакете **data/global** хранятся модели и интерфейсы репозиториев. 
+Packages named **global** contain common classes that are used in several features. For example, the **data/global** package stores models and repository interfaces.
 
-Слой **presentation**  разбит на два пакета - **mvp** и **ui**. В **mvp** хранятся, как понятно из названия, классы Presenter'ов и View. В **ui** хранятся реализация слоя View из MVP, т. е. Activity, Fragment'ы и т. д. 
+The **presentation** layer is divided into two packages - **mvp** and **ui**. In the **mvp** are stored Presenter and View classes, as the name implies. In **ui** is stored the implementation of the View layer from MVP, i.e. Activity, Fragments, etc.
 
-Разбиение классов по фичам имеет ряд преимуществ:
+This structure has the following benefits:
 
-- **Очевидность.** Даже не знакомый с проектом разработчик, при первом взгляде на структуру пакетов сможет примерно понять что делает приложение, не заглядывая в сам код. 
-- **Добавление нового функционала**.  Если вы решили добавить новую функцию в приложение, например, просмотр профиля пользователя, то вам лишь нужно добавить пакет **userprofile** и работать только с ним, а не "гулять" по всей структуре пакетов, создавая нужные классы.
-- **Удобство редактирования.** При редактировании какой либо фичи, нужно держать открытыми максимум два-три пакета и вы видите только те классы, которые относятся к конкретной фиче. При разбиении по типу класса, раскрытой приходится держать практически всё дерево пакетов и вы видите классы, которые вам сейчас не нужны, относящиеся к другим фичам.
-- **Удобство масштабирования**. При увеличении количества функций приложения, увеличивается и количество классов. При разбиении классов по типу, добавление новых классов делает навигацию по ним очень не удобным, т.к. приходится искать нужный класс, среди десятков других, что сказывается на скорости и удосбстве разработки. Разбиение по фичам решает эту проблему, т.к. вы можете объединить связанные между собой пакеты с фичами (например, можно объединить пакеты **login** и **registration** в пакет **authentication**).
+- **Understandability.** Any developer can tell what functions there are in the application without looking in the code.
+- **Easier to add new feature**. If you want to add a new feature to the application, for example, viewing the user profile, then you just need to add the **userprofile** package and work only with it, rather than going through entire package structure for creating the necessary classes.
+- **Easier to edit a feature.** When you edit a feature, you need to keep at most two or three packages open and you see only those classes that relate to current feature. When you divide classes by the type, you have to keep open almost the whole tree of packages and you have to see the classes that you do not need now, related to other features.
+- **Scalability and easier code navigation**. With the increasing number of app's functions, the number of classes also increases. When you divide classes by type, adding new classes makes navigation among them very uncomfortable, since you need to search for the necessary class, among dozens of others, which affects the speed of development. Dividing by features solves this problem, because you can combine related packages (for example, you can combine **login** and **registration** packages into the **authentication** package).
 
-Также хочется сказать пару слов об именовании пакетов: в каком числе их нужно называть - множественном или единственном? Я придерживаюсь подхода, описанного [здесь](https://softwareengineering.stackexchange.com/a/75929):
+I'd like to say a few words about package naming: should package names be singular or plural? I hold the approach described [here](https://softwareengineering.stackexchange.com/a/75929):
 
-1) Если пакет содержит однородные классы, то имя пакета ставится во множественном числе. Например, пакет с классами **Dog**, **Cat** и **Cow** будет называться **animals**. Другой пример - различные реализации какого-либо интерфейса (**XmlResponseAdapter**, **JsonResponseAdapter**).
-2) Если пакет содержит разнородные классы, реализующую определенную функцию, то имя пакета ставится в единственном числе. Пример - пакет **order**, содержащий классы **OrderInfo**,  **OrderInteractor**, **OrderValidation** и т. д.
+1) Use singular for packages with heterogeneous classes. For example, a package, that contains classes like **Dog**, **Cat** and **Cow** will be called **animals**. Another example is different implementations of the same interface (**XmlResponseAdapter**, **JsonResponseAdapter**).
+2) Use the plural for packages with homogeneous classes. For example, **order** package, that contains **OrderInfo**, **OrderInteractor**, **OrderValidation**, etc.
 
-### Дополнительные сущности, используемые на практике
+### Additional entities used in practice
 
 #### Router
 
-Т. к. Presenter содержит в себе логику реагирования на действия пользователя, то он также знает о том, на какой экран нужно перейти. Однако сам Presenter не может осуществлять переход на новый экран, т. к. для этого нам требуется Context. Поэтому за открытие нового экрана должна отвечать View. Для осуществления перехода на следующий экран мы должны вызвать метод View, например, **openProfileScreen()**, а уже в реализации самого метода осуществлять переход. Помимо данного подхода некоторые разработчики используют для навигации так называемый Router.
+Since Presenter decides what happens when you interact with the view, it also know what screen will be opened. But we can't open Activity from Presenter directly. There are two ways of solving this problem - call View method like **openProfileScreen()** and open new screen from Activity or use Router
 
-**Router** - класс, для осуществления переходов между экранами (активити или фрагментами).
+**Router** is a special class for navigating between screens (Activities or Fragments).
 
-Для реализации Router'а вы можете использовать библиотеку [Alligator](https://github.com/aartikov/Alligator).
+We recommend to use [Alligator](https://github.com/aartikov/Alligator) library for implementing navigation.
 
 #### Mapper
 
-**Mapper** - специальный класс, для конвертирования моделей из одного типа в другой, например, из модели БД в модель бизнес-логики. Обычно они имеют название типа XxxMapper, и имеют единственный метод с названием map (иногда встречаются названия convert/transform), например:
+**Mapper** is special class for converting models between layers, for example, from DB model to Domain model. Usually they calles like XxxMapper and have single method with name map (or convert/transform), for example:
 
 ```java
 public class ArticleDbModelMapper {
@@ -462,11 +460,11 @@ public class ArticleDbModelMapper {
 }
 ```
 
-Т. к. слой **domain** ничего не знает о классах других слоев, то маппинг моделей должен выполняться во внешних слоях, т. е. репозиторием (при конвертации **data** > **domain** или **domain** > **data**) или презентером (при конвертации **domain** > **presentation** и наоборот) .
+Since domain layer doesn't know anything about classes from other layers, the mapping of models must be performed in the outer layers, i. e. in Repository (when mapping **data > domain** or **domain> data**) or in Presenter (when mapping **domain> presentation** and vice versa) .
 
 #### ResourceManager
 
-В некоторых случаях может потребоваться получить строку или число из ресурсов приложения в Presenter'е или слое **domain** . Однако, мы знаем, что они не должны напрямую взаимодействовать с фреймворком Android. Чтобы решить эту проблему мы можем создать специальную сущность ResourceManager, для доступа у внешним ресурсам. Для этого мы создаем интерфейс:
+I some cases we need to get a string or a number from resources and use it in Presenter or domain layer. But we know that we can't use Context class. To resolve this problem we must use special class that called ResourceManager. Let's create an interface for this one:
 
 ```java
 public interface ResourceManager {
@@ -478,7 +476,7 @@ public interface ResourceManager {
 }
 ```
 
-Сам интерфейс должен располагаться в слое **domain**. После этого в слое **presentation** мы создаем реализацию нашего интерфейса:
+This interface must be contained in domain layer. Then we create the interface implementation in presentation layer:
 
 ```java
 public class AndroidResourceManager implements ResourceManager {
@@ -503,7 +501,7 @@ public class AndroidResourceManager implements ResourceManager {
 }
 ```
 
-Далее мы должны связать интерфейс и реализацию нашего ResourceManager'а в ApplicationModule:
+After that we must bind the interface with it's implementation in ApplicationModule:
 
 ```java
 @Singleton
@@ -513,7 +511,7 @@ protected ResourceManager provideResourceManager(AndroidResourceManager resource
 }
 ```
 
-Теперь мы можем использовать ResourceManager в Presenter'е или Interactor'ах:
+Now we can use ResourceManager in our Presenters or Interactors:
 
 ```java
 @InjectViewState
@@ -523,7 +521,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     private ResourceManager resourceManager;
     
     @Inject
-    public ArticlesListPresenter(...,  AndroidResourceManager resourceManager) {
+    public ArticlesListPresenter(..., AndroidResourceManager resourceManager) {
         ...
         this.resourceManager = resourceManager;
     }
@@ -536,11 +534,11 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 }
 ```
 
-Наверное, у внимательных читателей возник вопрос: почему мы используем класс **R** в Presenter'е? Ведь он также относится к Android? На самом деле, это не совсем так. Класс **R** вообще не использует никакие классы, и представляет из себя набор идентификаторов ресурсов. Поэтому, нет ничего плохого, чтобы использовать его в Presenter'е.
+Perhaps you have a question: "Why we can use **R** class in the Presenter?" Because it uses Android Framework. Actually, that's not entirely true. **R** class not use any class at all. So there is nothing bad with using **R** class in Presenter.
 
 #### SchedulersProvider
 
-Перед началом тестирования нам нужно сделать все операции синхронными. Для этого мы должны заменить все Scheduler'ы на **TestScheduler**, поэтому мы не устанавливаем Scheduler'ы напрямую через класс **Schedulers**, используем **SchedulersProvider**:
+To test our code we need make all operations synchronous. For that, we must replace all Schefulers to **TestScheduler**. For this reason, we set Schedulers through **SchedulersProvider**, but not directly.
 
 ```java
 public class SchedulersProvider {
@@ -572,7 +570,7 @@ public class SchedulersProvider {
 }
 ```
 
-Благодаря этому мы можем легко заменить Scheduler'ы на нужные нам, всего лишь создав наследника класса SchedulersProvider'а и переопределив методы:
+It allows easily replace Schedules by extending **SchedulersProvider** and overriding it's methods:
 
 ```java
 public class TestSchedulersProvider extends SchedulersProvider {
@@ -611,45 +609,45 @@ public class TestSchedulersProvider extends SchedulersProvider {
 }
 ```
 
-Далее, при самом тестировании, нам нужно будет лишь использовать TestSchedulersProvider вместо SchedulersProvider. Более подробно о тестировании кода с RxJava можно почитать [здесь](https://github.com/Froussios/Intro-To-RxJava/blob/master/Part%204%20-%20Concurrency/2.%20Testing%20Rx.md).
+Then, when testing we just need use TestSchedulersProvider instead of SchedulersProvider. More info about testing code with RxJava you can find [here](https://github.com/Froussios/Intro-To-RxJava/blob/master/Part%204%20-%20Concurrency/2.%20Testing%20Rx.md).
 
-## Обработка ошибок
+## Errors handling
 
-[раздел на доработке]
+[this chapter is in preparation]
 
-## Тестирование
+## Testing
 
-Одним из самых главных преимуществ чистой архитектуры является то, что мы можем покрыть тестами намного больший функционал приложения за счет разбиения кода на мелкие классы, каждый из которых выполняет строго определенную задачу. Благодаря принципу инверсии зависимостей, используемому в чистой архитектуре мы можем с легкостью подменять реализацию тех или иных классов на фейковые, которые реализуют нужное нам поведение.
+One key advantage of Clean Architecture is that we can cover with tests much more functionality of the application through the code into small classes, each of which performs a strictly defined task. Thanks to the Inversion of Control principle, that used in Clean Architecture, we can easily replace the implementation classes with fake ones that implement the behavior we want.
 
-Прежде чем начать писать тесты, мы должны ответить себе на два вопроса:
+Before we start writing tests, we must answer ourselves to two questions:
 
-- что мы хотим тестировать?
-- как мы будем это тестировать?
+- What do we want to test?
+- How will we test this?
 
-Что мы хотим тестировать:
+What we want to test:
 
-- Мы хотим проверить нашу бизнес-логику независимо от какого-либо фреймворка или библиотеки.
-- Мы хотим протестировать нашу интеграцию с API.
-- Мы хотим протестировать нашу интеграцию с нашей системой персистентности.
-- Все, что содержит условия.
+- We want to test our business logic regardless of any framework or library.
+- We want to test our integration with the API.
+- We want to test integration with our persistence system.
+- Everything that contains conditions.
 
-Что мы НЕ должны тестировать:
+What we should NOT test:
 
-- Сторонние библиотеки (мы предполагаем, что они работают правильно, потому что уже протестированы разработчиками)
-- Тривиальный код (например, геттеры и сеттеры)
+- Third-party libraries (we assume that they work correctly, because they have already been tested by the developers)
+- Trivial code (for example, getters and setters)
 
-Теперь, давайте разберём то, как мы будем тестировать каждый из слоев.
+Let's take a closer look at how we will test each of layers.
 
-### Тестирование слоя представления
+### Presentation layer testing
 
-Данный слой включает в себя 2 типа тестов:  Unit-тесты и UI-тесты.
+This layer include 2 types of tests: Unit-tests и UI-tests.
 
-- Unit-тесты используются для тестирования Presenter'ов.
-- UI-тесты используются для тестирования Activity (проверяется корректность отображения элементов и т. д.).
+- Unit-tests are used for testing Presenters.
+- UI-tests are used for testing Activities (to check if UI works correctly)
 
-Существуют различные соглашения по именованию тестовых методов. Например, в этой [статье](https://dzone.com/articles/7-popular-unit-test-naming) описаны некоторые из них. В примерах, которые я буду приводить далее, я не буду придерживаться какого-либо соглашения. Самое главное понять из названия, что тестирует наш метод и что мы хотим получить в результате. 
+There are different naming conventions for unit tests. For example, this](https://dzone.com/articles/7-popular-unit-test-naming) article describes some of them. In my examples of tests I will not adhere to any agreement. The most important thing is to understand what the tests are doing and what we want to get as a result.
 
-Давайте рассмотрим пример теста для **ArticlesListPresenter**:
+Let us take the example of test for **ArticlesListPresenter**:
 
 ```java
 public class ArticlesListPresenterTest {
@@ -677,53 +675,43 @@ public class ArticlesListPresenterTest {
 }
 ```
 
-Как видите, мы разделили код теста на три части:
+As you can see, we divided the test code into three parts:
 
-- Подготовка к тестированию. Здесь мы инициализируем объекты для тестирования, подготавливаем тестовые данные, а также предопределяем поведение моков.
-- Само тестирование. 
-- Проверка результатов тестирования. Здесь мы проверяем, что у View были вызваны нужные методы и переданы аргументы.
+- Preparation for testing. Here we initialize the objects for testing, prepare the test data, and also define the behavior of the mocks.
+- Testing itself
+- Checking the test results. Here we check that View methods have been called with necessary arguments .
 
-### Тестирование бизнес-логики
+### Domain layer testing
 
-В данном слое тестируюится классы Interactor'ов и Entity. Необходимо проверить, действительно ли бизнес-логика реализует требуемое поведение .
+[this chapter is in preparation]
 
-[раздел на доработке]
+### Data layer testing
 
-### Тестирование слоя работы с данными
+[this chapter is in preparation]
 
-[раздел на доработке]
+## Start a new application development using Clean Architecture
 
-## Начало разработки приложения с использованием Clean Architecture
+[this chapter is in preparation]
 
-Если вы начиначете разработку нового мобильного приложения, то лучше начать с создания пользовательского интерфейса, т. к. именно UI определяет 
+## Migration project to the Clean Architecture
 
-[раздел на доработке]
+[this chapter is in preparation]
 
-## Перенос на Clean Architecture существующих проектов
+## Clean Architecture FAQ
 
-[раздел на доработке]
+#### Should I rewrite all project when I migrate to Clean Architecture
 
-#### Шаг 1: 
+There is no definite answer on this question. If your project is big enough and migration to Clean Architecture take a lot of time, the best bet is to rewrite the project gradually, using approach that we have described above. But you can try to rewrite the project from scratch if your project is small (contains 2-3 screens) and you have enough time.
 
-#### Шаг 2: 
+Certainly a cautionary tale about developers of Netscape, who decided to rewrite the code from scratch - [Things You Should Never Do, Part I](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i).
 
-#### Шаг 3:
+#### Is it necessary to create separate models for each layer (Domain, Data, Presentaion)?
 
-## FAQ по Clean Architecture
+According to the principles of Clean Architecture, Domain layer should know nothing about outer layers (Data and Presentation), but outer layer can use classes from Domain layer. Consequently, yoг don't have to create separate models for each layer. However, if models for each layer are different, you must to create different classes. If you need to add annotations from libraries (for example, from Gson or Room) to models (without changing model structure), then you can add them directly to Domain-layer models, even though these are external libraries of Data layer, because creating separate models will be unnecessary duplication of code.
 
-#### Стоит ли переписывать весь проект при переносе проекта на Clean Architecture?
+#### Do we need to create interfaces for Presenters and Interactors to improve code testability?
 
-Наверное, нет однозначного ответа на этот вопрос. Если проект большой и переход на Clean Architecture может занять длительный промежуток времени, то лучше переписывать код постепенно, используя подход, который мы описали выше. Если же проект простой и состоит из 2-3 экранов, а сроки не поджимают, то вы можете попробовать переписать проект с нуля.
-
-В конце хочется привести поучительную историю про Netscape, который переписывали с нуля больше, чем три года - [Things You Should Never Do, Part I](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/)
-
-#### Обязательно ли создавать отдельные сущности для каждого из слоев (Domain, Data, Presentaion)?
-
-Согласно принципам Clean Architecture, слой Domain ничего не должен знать о внешних слоях (Data и Presentation), но внешние слои без проблем могут использовать классы из слоя Domain. Следовательно, можно не создавать отдельные сущности для каждого из слоев, а использовать только те, что лежат в слое Domain. Однако, если их формат не совпадает с тем, что используется во внешних слоях, то нужно создать отдельную сущность. Если вам нужно добавить к моделям аннотации от библиотек (например, от [Gson](https://github.com/google/gson) или [Room](https://developer.android.com/topic/libraries/architecture/room.html)), то вы можете добавить их прямо в модели Domain-слоя, несмотря на то, что это внешние библиотеки слоя Data, т. к. создание отдельных моделей приведёт к ненужному дублированию кода.
-
-#### Нужно ли создавать интерфейсы для классов Presenter и Interactor для улучшения тестируемости кода?
-
-Пример Presenter'а с интерфейсом:
+This is an example of Presenter with interface:
 
 ```java
 public interface LoginPresenter {
@@ -731,26 +719,24 @@ public interface LoginPresenter {
   void onLoginButtonPressed(String email, String password);
 }
 
-public class LoginPresenterImpl implements LoginPresenter {  
+public class LoginPresenterImpl implements LoginPresenter {
   ...
 }
 ```
 
-Нет, интерфейсы для презентера и интерактора создавать не нужно. Это создает дополнительные сложности при разработке, при этом пользы от данного подхода практически нет. Вот лишь некоторые проблемы, которые порождает создание лишних интерфейсов:
+No, you don't need to create interface for Presenters or Interactors, because it creates additional problems and has no advantages. There are some of the problems created by using redundant interfaces:
 
-- Если мы хотим добавить новый метод или изменить существующий, нам нужно изменить интерфейс. Помимо этого мы также должны изменить реализацию метода. Это занимает довольно времени, даже при использовании такой продвинутой IDE как Android Studio.
-- Использование дополнительных интерфейсов усложняет навигацию по коду. Если вы хотите перейти к реализации метода Presenter'а из Activity (т. е. реализации View), то вы переходите к интерфейсу Presenter'а.
-- Интерфейс никак не улучшает тестируемость кода. Вы с легкостью можете заменить класс Presenter'а на mock, используя любую библиотеку для mock'ирования.
+- If we want to add new method or change existing one, we need to change the interface. Also we need to change implementation of the interface. It takes quite some time, even using such a powerful IDE as Android Studio.
+- Using of additional interfaces makes code navigation more difficult. For example, if you want to open an implementation of a Presenter method from Activity, then you go to a method definition in the interface.
+- The interface doesn't improve code testability. You can easily replace Presenter's implementation to it's mock, using any mocking library.
 
-Более подробно можете почитать об этом в следующих статьях:
+You can read more about this topic in the following articles:
 
 - [Interfaces for presenters in MVP are a waste of time!](http://blog.karumi.com/interfaces-for-presenters-in-mvp-are-a-waste-of-time)
-- [Франкен-код или франкен-дизайн](https://plus.google.com/u/0/+SergeyTeplyakov/posts/gRaqrqaiGbe)
-- [Управление зависимостями](http://sergeyteplyakov.blogspot.ru/2012/11/blog-post.html)
 
-#### Как передать аргументы в Presenter, если его инстанс создает DI-контейнер?
+#### How to pass arguments into Presenter, when it's instance created via DI-container?
 
-Часто при создании презентера возникает необходимость передать дополнительные аргументы. Например, мы хотим передать идентфикатор статьи, чтобы получить её содержимое от сервера. Чтобы сделать это, нам необходимо создать отдельный модуль для Presenter'а и передать аргументы туда:
+Often when creating a presenter, we want to pass arguments to constructor For example, we want to pass an article ID to get its content from the server. To do this, we need to create a separate module for Presenter and pass the arguments there:
 
 ```java
 @Module
@@ -771,14 +757,14 @@ public class ArticleDetailsModule {
 }
 ```
 
-Далее нам нужно добавить наш модуль в Component:
+Next we need to add this module to the Component:
 
 ```java
 @Component(dependencies = ApplicationComponent.class, modules = ArticleDetailsModule.class)
 public interface ArticleDetailsComponent {
 ```
 
-При создании Component'а мы должны передать наш модуль с идентификатором:
+When creating the Component we provide our module with arguments:
 
 ```java
 long articleId = ...
@@ -789,7 +775,7 @@ ArticleDetailsComponent component = DaggerArticleDetailsComponent.builder()
     .build();
 ```
 
-Теперь мы можем получить наш идентификатор через конструктор:
+Now we can get our identifier through constructor:
 
 ```java
 @Inject
@@ -799,9 +785,9 @@ public UserFollowersPresenter(ArticleDetailsInteractor interactor, long articleI
 }
 ```
 
-Теперь представим, что помимо идентфикатора статьи, мы хотим передать ID пользователя, который так же имеет тип long. Если мы попытаемся создать ещё один provide-метод в нашем модуле, Dagger выдаст ошибку, о том, что типы совпадают и он не знает какой из них является идентфикатором статьи, а какой идентфикатором пользователя. 
+Let's suppose that in addition an article ID, we want to pass an user ID, that also has type "long". If we try to create another provide-method in our module, Dagger will give an error message, because it doesn't know which method provides an user ID or an article ID.
 
-Чтобы исправить это, нам необходимо создать Qualifier-аннотации,  которые будут указывать Dagger'у "who is who":
+To fix this, we need to create **Qualifier** annotations that will tell Dagger "who is who":
 
 ```java
 @Qualifier
@@ -817,7 +803,7 @@ public @interface UserId {
 }
 ```
 
-Добавляем аннотации к нашим provide-методам:
+Add annotations to our provide-methods:
 
 ```java
 @ArticleId
@@ -835,11 +821,11 @@ long provideUserId() {
 }
 ```
 
-Также нужно пометить аннотациями аргументы конструктора:
+Also, we need to mark the constructor arguments with annotations:
 
 ```java
 @Inject
 public UserFollowersPresenter(ArticleDetailsInteractor interactor, @ArticleId long articleId, @UserId long userId) 
 ```
 
-Готово. Теперь Dagger сможет верно расставить аргументы в конструктор.
+Done. Now Dagger can pass the arguments correctly.
