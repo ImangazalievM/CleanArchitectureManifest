@@ -170,7 +170,7 @@ If you notice, the Interactor methods return not just the result, but the classe
 
 1. You don't need to create listeners to get results.
 2. It's easy to switch threads.
-3. It's easy to handle  errors.
+3. It's easy to handle errors.
 
 
 To switch between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider'а](#schedulersprovider). It will help us in the future, when we want to test our code.
@@ -404,23 +404,23 @@ com.mydomain
 |     |     |---- ArticleListComponent
 ```
 
-Прежде чем делить код по фичам, мы разделили его на слои. Данный подход позволяет сразу определить к какому слою относится тот или иной класс. Если вы заметили, классы слоя **data** разбиты немного не так, как в слоях **domain**, **presentation** и **di**. Здесь вместо фич приложения мы выделили типы источников данных - сеть, база данных, файловая система. Это связано с тем, что все фичи используют практически одни и те же классы (например, **NewsApiService**) и их не имеет смысла разбивать по фичам.
+First of all, we divided the code into layers: data, domain, presentation. Also we created a separate package for the DI code. The packages **domain**, **presentation** and **di** are divided by features, and the **data** package is divided by data source type (network, database, file system). This is because all features use the same classes (for example, **NewsApiService**) and it will be very difficult to divide them into features.
 
-В пакетах с именем **global** хранятся общие классы, которые используются в нескольких фичах. Например, в пакете **data/global** хрянятся модели и интерфейсы репозиториев. 
+Packages named **global** contain common classes that are used in several features. For example, the **data/global** package stores models and repository interfaces.
 
-Слой **presentation**  разбит на два пакета - **mvp** и **ui**. В **mvp** хранятся, как понятно из названия, классы Presenter'ов и View. В **ui** хранятся реализация слоя View из MVP, т. е. Activity, Fragment'ы и т. д. 
+The **presentation** layer is divided into two packages - **mvp** and **ui**. In the **mvp** are stored Presenter and View classes, as the name implies. In **ui** is stored the implementation of the View layer from MVP, i.e. Activity, Fragments, etc.
 
-Разбиение классов по фичам имеет ряд преимуществ:
+This structure has the following benefits:
 
-- **Очевидность:** Даже не знакомый с проектом разработчик, при первом взгляде на структуру пакетов сможет примерно понять что делает приложение, не заглядывая в сам код. 
-- **Добавление нового функционала**.  Если вы решили добавить новую функцию в приложение, например, просмотр профиля пользователя, то вам лишь нужно добавить пакет **userprofle** и работать только с ним, а не "гулять" по всей структуре пакетов, создавая нужные классы.
-- **Удобство редактирования.** При редактировании какой либо фичи, нужно держать открытыми максимум два-три пакета и вы видите только те классы, которые относятся к конкретной фиче. При разбиении по типу класса, раскрытой приходится держать практически всё дерево пакетов и вы видите классы, которые вам сейчас не нужны, относящиеся к другим фичам.
-- **Удобство масштабирования**. При увеличении количества функций приложения, увеличивается и количество классов. При разбиении классов по типу, добавление новых классов делает навигацию по ним очень не удобным, т.к. приходится искать нужный класс, среди десятков других, что сказывается на скорости и удосбстве разработки. Разбиение по фичам решает эту проблему, т.к. вы можете объединить связанные между собой пакеты с фичами (напрмер, можно объединить пакеты **login** и **registration** в пакет **authentication**).
+- **Understandability.** Any developer can tell what functions there are in the application without looking in the code.
+- **Easier to add new feature**. If you want to add a new feature to the application, for example, viewing the user profile, then you just need to add the **userprofile** package and work only with it, rather than going through entire package structure for creating the necessary classes.
+- **Easier to edit a feature.** When you edit a feature, you need to keep at most two or three packages open and you see only those classes that relate to current feature. When you divide classes by the type, you have to keep open almost the whole tree of packages and you have to see the classes that you do not need now, related to other features.
+- **Scalability and easier code navigation**. With the increasing number of app's functions, the number of classes also increases. When you divide classes by type, adding new classes makes navigation among them very uncomfortable, since you need to search for the necessary class, among dozens of others, which affects the speed of development. Dividing by features solves this problem, because you can combine related packages (for example, you can combine **login** and **registration** packages into the **authentication** package).
 
-Также хочется сказать пару слов об именовании пакетов: в каком числе их нужно называть - множественном или единственном? Я придерживаюсь подхода, описанного [здесь](https://softwareengineering.stackexchange.com/a/75929):
+I'd like to say a few words about package naming: should package names be singular or plural? I hold the approach described [here](https://softwareengineering.stackexchange.com/a/75929):
 
-1) Если пакет содержит однородные классы, то имя пакета ставится во множественном числе. Например, пакет с классами **Dog**, **Cat** и **Cow** будет называться **animals**. Другой пример - различные реализации какого-либо интерфейса (**XmlResponseAdapter**, **JsonResponseAdapter**).
-2) Если пакет содержит разнородные классы, реализующую определенную функцию, то имя пакета ставится в единственном числе. Пример - пакет **order**, содержащий классы **OrderInfo**,  **OrderInteractor**, **OrderValidation** и т. д.
+1) Use singular for packages with heterogeneous classes. For example, a package, that contains classes like **Dog**, **Cat** and **Cow** will be called **animals**. Another example is different implementations of the same interface (**XmlResponseAdapter**, **JsonResponseAdapter**).
+2) Use the plural for packages with homogeneous classes. For example, **order** package, that contains **OrderInfo**, **OrderInteractor**, **OrderValidation**, etc.
 
 ### Additional entities used in practice
 
@@ -515,7 +515,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     private ResourceManager resourceManager;
     
     @Inject
-    public ArticlesListPresenter(...,  AndroidResourceManager resourceManager) {
+    public ArticlesListPresenter(..., AndroidResourceManager resourceManager) {
         ...
         this.resourceManager = resourceManager;
     }
@@ -634,10 +634,10 @@ Let's take a closer look at how we will test each of layers.
 
 ### Presentation layer testing
 
-This layer include 2 types of tests:  Unit-tests и UI-tests.
+This layer include 2 types of tests: Unit-tests и UI-tests.
 
 - Unit-tests are used for testing Presenters.
-- UI-tests  are used for testing Activities (to check if UI works correctly).
+- UI-tests are used for testing Activities (to check if UI works correctly)
 
 There are different naming conventions for unit tests. For example, this](https://dzone.com/articles/7-popular-unit-test-naming) article describes some of them. In my examples of tests I will not adhere to any agreement. The most important thing is to understand what the tests are doing and what we want to get as a result.
 
@@ -713,7 +713,7 @@ public interface LoginPresenter {
   void onLoginButtonPressed(String email, String password);
 }
 
-public class LoginPresenterImpl implements LoginPresenter {  
+public class LoginPresenterImpl implements LoginPresenter {
   ...
 }
 ```
