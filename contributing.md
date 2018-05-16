@@ -7,5 +7,5 @@
 
 **Notes for translators:**
 
-* Do your changes in the new branch.
+* Make your changes in the new branch.
 * Keep the same content & formatting - the focus is on translation, should anyone want to modify the content or the graphics - let's PR first in English.
