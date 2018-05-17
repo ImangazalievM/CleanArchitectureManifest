@@ -91,7 +91,7 @@ As mentioned earlier, an app architecture based on Clean Architecture principles
 
 Above presents layers interaction scheme. Those black arrows represent dependencies of one layers on another, and blue arrows represent data flow. As you can see, data and presentation layers depend on domain layer, i. e. they use it's classes. But **domain** layer doesn't know anything about outer layers and uses only its own classes and interfaces. Next, we will explain each of those layers in more detail, and how they interact.
 
-As can be seen from the scheme, all three layers can exchange data. It is worth mentioning that direct interaction between **presentation** и **data** layers must not be allowed. Data flow should go from **presentation** layer to **data** layer through **domain** (this could be, for example, passing string with search query or user registration data). The same can happen and vice versa (for example, when we return search results).
+As can be seen from the scheme, all three layers can exchange data. It is worth mentioning that direct interaction between **presentation** and **data** layers must not be allowed. Data flow should go from **presentation** layer to **data** layer through **domain** (this could be, for example, passing string with search query or user registration data). The same can happen and vice versa (for example, when we return search results).
 
 ## Domain layer
 
@@ -640,7 +640,7 @@ Let's take a closer look at how we will test each of layers.
 
 ### Presentation layer testing
 
-This layer include 2 types of tests: Unit-tests и UI-tests.
+This layer include 2 types of tests: Unit-tests and UI-tests.
 
 - Unit-tests are used for testing Presenters.
 - UI-tests are used for testing Activities (to check if UI works correctly)
