@@ -464,7 +464,7 @@ Since domain layer doesn't know anything about classes from other layers, the ma
 
 #### ResourceManager
 
-I some cases we need to get a string or a number from resources and use it in Presenter or domain layer. But we know that we can't use Context class. To resolve this problem we must use special class that called ResourceManager. Let's create an interface for this one:
+In some cases we need to get a string or a number from resources and use it in Presenter or domain layer. But we know that we can't use Context class. To resolve this problem we must use special class that called ResourceManager. Let's create an interface for this one:
 
 ```java
 public interface ResourceManager {
