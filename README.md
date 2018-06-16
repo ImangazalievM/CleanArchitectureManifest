@@ -42,16 +42,14 @@ Clean Architecture includes two main principles:
 1. Separation into layers
 2. Inversion of Control
 
-Let's look at each of them.
+Let's take a closer look at them.
 
 **1. Separating into layers**
 
-The sense of this principle is in the separation whole app code into layers. In general we have three layers:
+The main idea of this principle is separating whole app into layers. In general we have three layers:
 
 1. Presentation layer
-
 2. Domain layer (business logic) 
-
 3. Data layer
 
 **2.Inversion of Control**
@@ -83,15 +81,15 @@ Disadvantages:
 
 ![CleanArchitectureLayers](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/CleanArchitectureLayers.png)
 
-As mentioned earlier, an app architecture based on Clean Architecture principles, can be divided into three layers:
+As mentioned earlier, an app architecture based on Clean Architecture principles can be divided into three layers:
 
 - presentation
 - domain
 - data
 
-Above presents layers interaction scheme. Those black arrows represent dependencies of one layers on another, and blue arrows represent data flow. As you can see, data and presentation layers depend on domain layer, i. e. they use it's classes. But **domain** layer doesn't know anything about outer layers and uses only its own classes and interfaces. Next, we will explain each of those layers in more detail, and how they interact.
+Above presents layers interaction scheme. Those black arrows represent dependencies of one layer on another, and blue arrows represent data flow. As you can see, data and presentation layers depend on domain layer, i. e. they use its classes. But **domain** layer doesn't know anything about outer layers and uses only its own classes and interfaces. Next, we will explain each of those layers in more detail, and how they interact.
 
-As can be seen from the scheme, all three layers can exchange data. It is worth mentioning that direct interaction between **presentation** and **data** layers must not be allowed. Data flow should go from **presentation** layer to **data** layer through **domain** (this could be, for example, passing string with search query or user registration data). The same can happen and vice versa (for example, when we return search results).
+As can be seen from the scheme, all three layers can exchange data. It is worth mentioning that direct interaction between the **presentation** and the **data** layers must not be allowed. Data flow should go from the **presentation** layer to the **data** layer through the **domain** (this could be, for example, passing string with search query or user registration data). The same can happen and vice versa (for example, when we return search results).
 
 ## Domain layer
 
@@ -105,7 +103,7 @@ Robert Martin divides business logic into two types: a specific for a concrete a
 
 **Interactor** - an object that implements business logic for a specific application.
 
-But it's all in theory. In practice, only Interactors are used. At least I have not seen any applications that uses Entity. By the way, many confuse Entity with DTO (Data Transfer Object). The fact is that the Entity of Clean Architecture is not exactly the Entity that we are used to seeing.
+But it's all in theory. In practice, only Interactors are used. At least I have not seen any application that uses Entity. By the way, many confuse Entity with DTO (Data Transfer Object). The fact is that the Entity of Clean Architecture is not exactly the Entity that we are used to seeing.
 
 **Use Case** - is a series of operations to achieve a goal. Example of a use case for user registration:
 
@@ -117,7 +115,7 @@ But it's all in theory. In practice, only Interactors are used. At least I have 
 >
 > 1. The user entered incorrect data (the system shows an error)
 
-Let's see how it looks like in practice. Robert Martin suggests to create separate class for each use case, that  has single method to run it. An example of such a class:
+Let's see how it looks like in practice. Robert Martin suggests to create the separate class for each use case, that has a single method to run it. An example of such a class:
 
 ```java
 public class RegisterUserInteractor {
@@ -170,7 +168,7 @@ public class ArticleDetailsInteractor {
 }
 ```
 
-As you can see, sometimes Interactor methods can not contain business logic at all, and Interactor methods act as a proxy between Repository and Presenter.
+As you can see, sometimes Interactor methods cannot contain business logic at all, and Interactor methods act as a proxy between Repository and Presenter.
 
 If you notice, the Interactor methods return not just the result, but the classes of RxJava 2 (depending on the type of operation we use different classes - Single, Completable, etc.). This gives several advantages:
 
@@ -179,7 +177,7 @@ If you notice, the Interactor methods return not just the result, but the classe
 3. It's easy to handle errors.
 
 
-To switch between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider](#schedulersprovider). It will help us in the future, when we want to test our code.
+To switch between threads, we use the` subscribeOn` method, as usual, but we get the Scheduler not through the static methods of the Schedulers class, but with the [SchedulersProvider](#schedulersprovider). It will help us in the future when we want to test our code.
 
 ### Data layer
 
@@ -187,7 +185,7 @@ To switch between threads, we use the` subscribeOn` method, as usual, but we get
 
 This layer contains everything about storing and managing data. It could be database, SharedPreferences, network or file system, as well as caching logic.
 
-As a "bridge" between data and domain layer, there is Repository interface (in the original Uncle Bob's scheme it's called Gateway). The interface itself is stored in the Domain layer, but it's implementation is stored in the Data layer. In doing so, domain layer classes don't know where the data comes from - from the database, the network or from somewhere else. That's why all caching logic should be contained in the data layer.
+As a "bridge" between data and domain layer, there is Repository interface (in the original Uncle Bob's scheme it's called Gateway). The interface itself is stored in the Domain layer, but its implementation is stored in the Data layer. In doing so, domain layer classes don't know where the data comes from - from the database, the network or from somewhere else. That's why all caching logic should be contained in the data layer.
 
 #### Repository
 
@@ -211,7 +209,7 @@ public interface ArticleRepository {
 
 ![PresentationLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png)
 
-Presentation layer contains all UI components, such as views, Activities, Fragments, etc. Also, it contains Presenters and Views (or ViewModels if you use MVVM). In this tutorial we will use MVP (Model-View-Presenter) pattern, but you can choose other one (MVVM, MVI).
+Presentation layer contains all UI components, such as views, Activities, Fragments, etc. Also, it contains Presenters and Views (or ViewModels if you use MVVM). In this tutorial, we will use MVP (Model-View-Presenter) pattern, but you can choose other one (MVVM, MVI).
 
 The library helps to solve many problems related with Activity lifecycle. Moxy has base classes, there are `MvpView` and `MvpPresenter`, that must be extended by all your Views and Presenters. To save you from coding boilerplate classes Moxy uses Annotation Processing. For the correct work of code generation, you must use the special annotations provided by Moxy. More information about the library you can find [here](https://medium.com/redmadrobot-mobile/android-without-lifecycle-mpvsv-approach-with-moxy-6a3ae33521e).
 
@@ -227,7 +225,7 @@ View is responsible for how the data will be shown to the user. In the case of A
 public interface ArticlesListView extends MvpView {
 
     void showLoadingProgress(boolean show);
-    void showVisits(List<Article> articles);
+    void showArticles(List<Article> articles);
     void showArticlesLoadingErrorMessage();
 
 }
@@ -256,7 +254,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     }
   
     private void loadArticles() {
-      	getViewState().showLoadingProgress(true);
+          getViewState().showLoadingProgress(true);
         articlesListInteractor.getArticles()
             .observeOn(schedulersProvider.ui())
             .subscribe(articles -> {
@@ -296,7 +294,7 @@ Sometimes you can find the code in which the DI-container (Component) is passed 
 ArticlesListInteractor articlesListInteractor;
 
 public VisitsPresenter(ArticlesListPresenterComponent component) {
-	component.inject(this);
+    component.inject(this);
 }
 ```
 
@@ -410,7 +408,7 @@ com.mydomain
 |     |     |---- ArticleListComponent
 ```
 
-First of all, we divided the code into layers: data, domain, presentation. Also we created a separate package for the DI code. The packages **domain**, **presentation** and **di** are divided by features, and the **data** package is divided by data source type (network, database, file system). This is because all features use the same classes (for example, **NewsApiService**) and it will be very difficult to divide them into features.
+First of all, we divided the code into layers: data, domain, presentation. Also, we created a separate package for the DI code. The packages **domain**, **presentation** and **di** are divided by features, and the **data** package is divided by data source type (network, database, file system). This is because all features use the same classes (for example, **NewsApiService**) and it will be very difficult to divide them into features.
 
 Packages named **global** contain common classes that are used in several features. For example, the **data/global** package stores models and repository interfaces.
 
@@ -421,7 +419,7 @@ This structure has the following benefits:
 - **Understandability.** Any developer can tell what functions there are in the application without looking in the code.
 - **Easier to add new feature**. If you want to add a new feature to the application, for example, viewing the user profile, then you just need to add the **userprofile** package and work only with it, rather than going through entire package structure for creating the necessary classes.
 - **Easier to edit a feature.** When you edit a feature, you need to keep at most two or three packages open and you see only those classes that relate to current feature. When you divide classes by the type, you have to keep open almost the whole tree of packages and you have to see the classes that you do not need now, related to other features.
-- **Scalability and easier code navigation**. With the increasing number of app's functions, the number of classes also increases. When you divide classes by type, adding new classes makes navigation among them very uncomfortable, since you need to search for the necessary class, among dozens of others, which affects the speed of development. Dividing by features solves this problem, because you can combine related packages (for example, you can combine **login** and **registration** packages into the **authentication** package).
+- **Scalability and easier code navigation**. With the increasing number of app's functions, the number of classes also increases. When you divide classes by type, adding new classes makes navigation among them very uncomfortable since you need to search for the necessary class, among dozens of others, which affects the speed of development. Dividing by features solves this problem because you can combine related packages (for example, you can combine **login** and **registration** packages into the **authentication** package).
 
 I'd like to say a few words about package naming: should package names be singular or plural? I hold the approach described [here](https://softwareengineering.stackexchange.com/a/75929):
 
@@ -440,7 +438,7 @@ We recommend to use [Alligator](https://github.com/aartikov/Alligator) library f
 
 #### Mapper
 
-**Mapper** is special class for converting models between layers, for example, from DB model to Domain model. Usually they calles like XxxMapper and have single method with name map (or convert/transform), for example:
+**Mapper** is a special class for converting models between layers, for example, from DB model to Domain model. Usually, they called like XxxMapper and have a single method with name map (or convert/transform), for example:
 
 ```java
 public class ArticleDbModelMapper {
@@ -464,7 +462,7 @@ Since domain layer doesn't know anything about classes from other layers, the ma
 
 #### ResourceManager
 
-In some cases we need to get a string or a number from resources and use it in Presenter or domain layer. But we know that we can't use Context class. To resolve this problem we must use special class that called ResourceManager. Let's create an interface for this one:
+In some cases, we need to get a string or a number from resources and use it in Presenter or domain layer. But we know that we can't use Context class. To resolve this problem we must use a special class that called ResourceManager. Let's create an interface for this one:
 
 ```java
 public interface ResourceManager {
@@ -476,7 +474,7 @@ public interface ResourceManager {
 }
 ```
 
-This interface must be contained in domain layer. Then we create the interface implementation in presentation layer:
+This interface must be contained in the domain layer. Then we create the interface implementation in presentation layer:
 
 ```java
 public class AndroidResourceManager implements ResourceManager {
@@ -488,12 +486,12 @@ public class AndroidResourceManager implements ResourceManager {
         this.context = context;
     }
   
-    @Override	
+    @Override    
     public String getString(int resourceId)  {
         return context.getResources().getString(resourceId);
     }
 
-    @Override	
+    @Override    
     public int getInteger(int resourceId) {
         return context.getResources().getInteger(resourceId);
     }
@@ -501,7 +499,7 @@ public class AndroidResourceManager implements ResourceManager {
 }
 ```
 
-After that we must bind the interface with it's implementation in ApplicationModule:
+After that we must bind the interface with its implementation in ApplicationModule:
 
 ```java
 @Singleton
@@ -534,11 +532,11 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 }
 ```
 
-Perhaps you have a question: "Why we can use **R** class in the Presenter?" Because it uses Android Framework. Actually, that's not entirely true. **R** class not use any class at all. So there is nothing bad with using **R** class in Presenter.
+Perhaps you have a question: "Why we can use **R** class in the Presenter?" Because it uses Android Framework. Actually, that's not entirely true. **R** class does not use any class at all. So there is nothing bad with using **R** class in Presenter.
 
 #### SchedulersProvider
 
-To test our code we need make all operations synchronous. For that, we must replace all Schefulers to **TestScheduler**. For this reason, we set Schedulers through **SchedulersProvider**, but not directly.
+To test our code we need make all operations synchronous. For that, we must replace all Schedulers to **TestScheduler**. For this reason, we set Schedulers through **SchedulersProvider**, but not directly.
 
 ```java
 public class SchedulersProvider {
@@ -633,21 +631,21 @@ What we want to test:
 
 What we should NOT test:
 
-- Third-party libraries (we assume that they work correctly, because they have already been tested by the developers)
+- Third-party libraries (we assume that they work correctly because they have already been tested by the developers)
 - Trivial code (for example, getters and setters)
 
 Let's take a closer look at how we will test each of layers.
 
 ### Presentation layer testing
 
-This layer include 2 types of tests: Unit-tests and UI-tests.
+This layer includes 2 types of tests: Unit-tests and UI-tests.
 
 - Unit-tests are used for testing Presenters.
 - UI-tests are used for testing Activities (to check if UI works correctly)
 
-There are different naming conventions for unit tests. For example, this](https://dzone.com/articles/7-popular-unit-test-naming) article describes some of them. In my examples of tests I will not adhere to any agreement. The most important thing is to understand what the tests are doing and what we want to get as a result.
+There are different naming conventions for unit tests. For example, this](https://dzone.com/articles/7-popular-unit-test-naming) article describes some of them. In my examples of tests, I will not adhere to an agreement. The most important thing is to understand what the tests are doing and what we want to get as a result.
 
-Let us take the example of test for **ArticlesListPresenter**:
+Let us take the example of a test for **ArticlesListPresenter**:
 
 ```java
 public class ArticlesListPresenterTest {
@@ -663,7 +661,7 @@ public class ArticlesListPresenterTest {
         ArrayList<Article> articlesList = ArrayList<Article>;
         when(interactor.getArticlesList()).thenReturn(Single.just(articlesList));
       
-      	//testing
+          //testing
         presenter.attachView(view)
 
         //asserting
@@ -679,7 +677,7 @@ As you can see, we divided the test code into three parts:
 
 - Preparation for testing. Here we initialize the objects for testing, prepare the test data, and also define the behavior of the mocks.
 - Testing itself
-- Checking the test results. Here we check that View methods have been called with necessary arguments .
+- Checking the test results. Here we check the View methods have been called with necessary arguments.
 
 ### Domain layer testing
 
@@ -701,11 +699,11 @@ As you can see, we divided the test code into three parts:
 
 #### Should I rewrite all project when I migrate to Clean Architecture
 
-There is no definite answer on this question. If your project is big enough and migration to Clean Architecture take a lot of time, the best bet is to rewrite the project gradually, using approach that we have described above. But you can try to rewrite the project from scratch if your project is small (contains 2-3 screens) and you have enough time.
+There is no definite answer to this question. If your project is big enough and migration to Clean Architecture take a lot of time, the best bet is to rewrite the project gradually, using the approach that we have described above. But you can try to rewrite the project from scratch if your project is small (contains 2-3 screens) and you have enough time.
 
 Certainly a cautionary tale about developers of Netscape, who decided to rewrite the code from scratch - [Things You Should Never Do, Part I](https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i).
 
-#### Is it necessary to create separate models for each layer (Domain, Data, Presentaion)?
+#### Is it necessary to create separate models for each layer (Domain, Data, Presentation)?
 
 According to the principles of Clean Architecture, Domain layer should know nothing about outer layers (Data and Presentation), but outer layer can use classes from Domain layer. Consequently, yoг don't have to create separate models for each layer. However, if models for each layer are different, you must to create different classes. If you need to add annotations from libraries (for example, from Gson or Room) to models (without changing model structure), then you can add them directly to Domain-layer models, even though these are external libraries of Data layer, because creating separate models will be unnecessary duplication of code.
 
@@ -726,7 +724,7 @@ public class LoginPresenterImpl implements LoginPresenter {
 
 No, you don't need to create interface for Presenters or Interactors, because it creates additional problems and has no advantages. There are some of the problems created by using redundant interfaces:
 
-- If we want to add new method or change existing one, we need to change the interface. Also we need to change implementation of the interface. It takes quite some time, even using such a powerful IDE as Android Studio.
+- If we want to add new method or change existing one, we need to change the interface. Also, we need to change implementation of the interface. It takes quite some time, even using such a powerful IDE as Android Studio.
 - Using of additional interfaces makes code navigation more difficult. For example, if you want to open an implementation of a Presenter method from Activity, then you go to a method definition in the interface.
 - The interface doesn't improve code testability. You can easily replace Presenter's implementation to it's mock, using any mocking library.
 
