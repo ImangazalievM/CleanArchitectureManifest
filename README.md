@@ -141,6 +141,26 @@ public class RegisterUserInteractor {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class RegisterUserInteractor(
+        private val userRepository: UserRepository,
+        private val registerDataValidator: RegisterDataValidator,
+        private val schedulersProvider: SchedulersProvider
+) {
+
+    fun execute(userData: User): Single<RegisterResult> {
+        return registerDataValidator.validate(userData)
+                .flatMap { userData -> userRepository.registerUser(userData) }
+                .subscribeOn(schedulersProvider.io())
+    }
+
+}
+```
+
+</p></details>
+
 However, practice shows that with this approach, you get a huge number of classes, with a small amount of code. A better approach would be to create single Interactor for one screen, the methods of which implement a certain use case. For example:
 
 ```java
@@ -167,6 +187,29 @@ public class ArticleDetailsInteractor {
   
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticleDetailsInteractor(
+        private val articlesRepository: ArticlesRepository,
+        private val schedulersProvider: SchedulersProvider
+) {
+
+    fun getArticleDetails(articleId: Long): Single<Article> {
+        return articlesRepository.getArticleDetails(articleId)
+                .subscribeOn(schedulersProvider.io())
+    }
+
+    fun addArticleToFavorite(articleId: Long, isFavorite: Boolean): Completable {
+        return articlesRepository.addArticleToFavorite(articleId, isFavorite)
+                .subscribeOn(schedulersProvider.io())
+    }
+
+}
+```
+
+</p></details>
 
 As you can see, sometimes Interactor methods cannot contain business logic at all, and Interactor methods act as a proxy between Repository and Presenter.
 
@@ -205,6 +248,24 @@ public interface ArticleRepository {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface ArticleRepository {
+
+    fun getArticle(articleId: String): Single<Article>
+    
+    fun getLastNews(): Single<List<Article>>
+
+    fun getCategoryArticles(categoryId: String): Single<List<Article>>
+
+    fun getRelatedPosts(articleId: String): Single<List<Article>>
+
+}
+```
+
+</p></details>
+
 ### Presentation layer
 
 ![PresentationLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png)
@@ -231,6 +292,20 @@ public interface ArticlesListView extends MvpView {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface ArticlesListView : MvpView {
+
+    fun showLoadingProgress(show: Boolean)
+    fun showArticles(articles: List<Article>)
+    fun showArticlesLoadingErrorMessage()
+
+}
+```
+
+</p></details>
+
 So far we have described View interface, i. e. which View methods the Presenter can call. Note that our View is inherited from the **MvpView**, which is part of the Moxy library. That is a must for correct library work.
 
 #### Presenter
@@ -254,7 +329,7 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     }
   
     private void loadArticles() {
-          getViewState().showLoadingProgress(true);
+    	getViewState().showLoadingProgress(true);
         articlesListInteractor.getArticles()
             .observeOn(schedulersProvider.ui())
             .subscribe(articles -> {
@@ -271,6 +346,41 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@InjectViewState
+class ArticlesListPresenter @Inject constructor(
+        private val articlesListInteractor: ArticlesListInteractor,
+        private val schedulersProvider: SchedulersProvider
+) : MvpPresenter<ArticlesListView>() {
+
+    init {
+        loadArticles()
+    }
+
+    private fun loadArticles() {
+        viewState.showLoadingProgress(true)
+        articlesListInteractor.getArticles()
+                .observeOn(schedulersProvider.ui())
+                .subscribe(
+                        { articles ->
+                            getViewState().showLoadingProgress(false)
+                            getViewState().showArticles(articles)
+                        },
+                        { throwable -> getViewState().showLoadingError() }
+                )
+    }
+
+    fun onArticleSelected(article: Article) {
+        ...
+    }
+
+}
+```
+
+</p></details>
+
 All the necessary classes we pass through the Presenter's constructor. It's actually called "constructor injection".
 
 When creating the Presenter's object we must pass dependencies required by the constructor. If there are a lot of them, the creation of Presenter will be rather difficult. Because we don't want to do this manually, we will delegate this work to the Component.
@@ -285,6 +395,20 @@ public interface ArticlesListComponent {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Presenter
+@Component(dependencies = ApplicationComponent::class)
+interface ArticlesListComponent {
+
+    val getPresenter() : ArticlesListPresenter
+
+}
+```
+
+</p></details>
+
 It will supply the necessary dependencies, and we need only get the Presenter instance by calling the **getPresenter()** method. If you have a question, "How do you pass arguments to Presenter then?", then look in the FAQ - there is a detailed description of this issue.
 
 Sometimes you can find the code in which the DI-container (Component) is passed to the constructor, after which all the necessary dependencies inject in the fields:
@@ -297,6 +421,19 @@ public VisitsPresenter(ArticlesListPresenterComponent component) {
     component.inject(this);
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Inject
+lateinit var articlesListInteractor: ArticlesListInteractor
+
+init {
+    component.inject(this)
+}
+```
+
+</p></details>
 
 However, this approach is incorrect, because it complicates the testing of the class and creates a bunch of unnecessary code. If in the first case we could just pass mocked classes through the constructor, then now we need to create a DI-container and pass it. Also, this approach makes the class dependent on a particular DI-framework, which is also not good.
 
@@ -337,6 +474,41 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticlesListActivity : MvpAppCompatActivity(), ArticlesListView {
+
+    @InjectPresenter
+    lateinit var presenter: ArticlesListPresenter
+
+    @ProvidePresenter
+    fun provideArticlesListPresenter(): ArticlesListPresenter {
+        val component = DaggerArticlesListPresenterComponent.builder()
+                .applicationcomponent(MyApplication.getComponent())
+                .build()
+        return component.getPresenter()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_articles_list)
+
+    }
+
+    override fun showArticles(articles: List<Article>) {
+       ...
+    }
+
+    override fun showLoadingError() {
+       ...
+    }
+
+}
+```
+
+</p></details>
 
 For Moxy to correct work, our Activity must extend **MvpAppCompatActivity** (or **MvpAppCompatFragment** for Fragments). To inject an `ArticlesListPresenter` instance into `presenter` field we use ```@InjectPresenter``` annotation. 
 
@@ -458,6 +630,25 @@ public class ArticleDbModelMapper {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticleDbModelMapper {
+
+	fun map(model: ArticleDbModel) =
+         Article(
+                 name = model.name,
+                 lastname = model.lastname,
+                 age = model.age
+         )
+    
+    fun map(models: Collection<ArticleDbModel>) = models.map { map(it) }
+
+}
+```
+
+</p></details>
+
 Since domain layer doesn't know anything about classes from other layers, the mapping of models must be performed in the outer layers, i. e. in Repository (when mapping **data > domain** or **domain> data**) or in Presenter (when mapping **domain> presentation** and vice versa) .
 
 #### ResourceManager
@@ -473,6 +664,20 @@ public interface ResourceManager {
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface ResourceManager {
+
+    fun getString(resourceId: Int): String
+
+    fun getInteger(resourceId: Int): Int
+
+}
+```
+
+</p></details>
 
 This interface must be contained in the domain layer. Then we create the interface implementation in presentation layer:
 
@@ -499,6 +704,26 @@ public class AndroidResourceManager implements ResourceManager {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class AndroidResourceManager @Inject constructor(
+        private val context: Context
+) : ResourceManager {
+
+    override fun getString(resourceId: Int): String {
+        return context.resources.getString(resourceId)
+    }
+
+    override fun getInteger(resourceId: Int): Int {
+        return context.resources.getInteger(resourceId)
+    }
+
+}
+```
+
+</p></details>
+
 After that we must bind the interface with its implementation in ApplicationModule:
 
 ```java
@@ -508,6 +733,16 @@ protected ResourceManager provideResourceManager(AndroidResourceManager resource
     return resourceManager
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Singleton
+@Provides
+fun  provideResourceManager(resourceManager: AndroidResourceManager) : ResourceManager = resourceManager
+```
+
+</p></details>
 
 Now we can use ResourceManager in our Presenters or Interactors:
 
@@ -531,6 +766,25 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@InjectViewState
+class ArticlesListPresenter @Inject constructor(
+	private val resourceManager: AndroidResourceManager
+) : MvpPresenter<ArticlesListView>() {
+    
+    private fun onLoadError(throwable: Throwable) {
+        ...
+        
+		viewState.showMessage(resourceManager.getString(R.string.articles_load_error))
+    }
+
+}
+```
+
+</p></details>
 
 Perhaps you have a question: "Why we can use **R** class in the Presenter?" Because it uses Android Framework. Actually, that's not entirely true. **R** class does not use any class at all. So there is nothing bad with using **R** class in Presenter.
 
@@ -567,6 +821,22 @@ public class SchedulersProvider {
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+open class SchedulersProvider @Inject constructor() {
+
+    open fun ui(): Scheduler = AndroidSchedulers.mainThread()
+    open fun computation(): Scheduler = Schedulers.computation()
+    open fun io(): Scheduler = Schedulers.io()
+    open fun newThread(): Scheduler = Schedulers.newThread()
+    open fun trampoline(): Scheduler = Schedulers.trampoline()
+
+}
+```
+
+</p></details>
 
 It allows easily replace Schedules by extending **SchedulersProvider** and overriding it's methods:
 
@@ -606,6 +876,24 @@ public class TestSchedulersProvider extends SchedulersProvider {
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class TestSchedulerProvider : SchedulersProvider() {
+
+    val testScheduler = TestScheduler()
+
+    override fun ui(): Scheduler = testScheduler
+    override fun computation(): Scheduler = testScheduler
+    override fun io(): Scheduler = testScheduler
+    override fun newThread(): Scheduler = testScheduler
+    override fun trampoline(): Scheduler = testScheduler
+
+}
+```
+
+</p></details>
 
 Then, when testing we just need use TestSchedulersProvider instead of SchedulersProvider. More info about testing code with RxJava you can find [here](https://github.com/Froussios/Intro-To-RxJava/blob/master/Part%204%20-%20Concurrency/2.%20Testing%20Rx.md).
 
@@ -673,6 +961,36 @@ public class ArticlesListPresenterTest {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticlesListPresenterTest {
+
+    @Test
+    fun shouldLoadArticlesOnViewAttached() {
+        //preparing
+        val interactor = Mockito.mock(ArticlesListInteractor::class.java)
+        val schedulers = TestSchedulersProvider()
+        val presenter = ArticlesListPresenter(interactor, schedulers)
+        val view = Mockito.mock(ArticlesListView::class.java)
+
+        val articlesList = ArrayList<Article>
+        `when`(interactor.getArticlesList()).thenReturn(Single.just(articlesList))
+
+        //testing
+        presenter.attachView(view)
+
+        //asserting
+        verify(view, times(1)).showLoadingProgress(true)
+        verify(view, times(1)).showLoadingProgress(false)
+        verify(view, times(1)).showArticles(articlesList)
+    }
+
+}
+```
+
+</p></details>
+
 As you can see, we divided the test code into three parts:
 
 - Preparation for testing. Here we initialize the objects for testing, prepare the test data, and also define the behavior of the mocks.
@@ -714,13 +1032,30 @@ This is an example of Presenter with interface:
 ```java
 public interface LoginPresenter {
 
-  void onLoginButtonPressed(String email, String password);
+	void onLoginButtonPressed(String email, String password);
+  
 }
 
 public class LoginPresenterImpl implements LoginPresenter {
-  ...
+	...
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface LoginPresenter {
+
+	fun onLoginButtonPressed(email: String, password: String)
+  
+}
+
+class LoginPresenterImpl : LoginPresenter {
+	...
+}
+```
+
+</p></details>
 
 No, you don't need to create interface for Presenters or Interactors, because it creates additional problems and has no advantages. There are some of the problems created by using redundant interfaces:
 
@@ -755,12 +1090,36 @@ public class ArticleDetailsModule {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Module
+class ArticleDetailsModule(val articleId: Long) {
+
+    @Provides
+    @Presenter
+    fun provideArticleId() = articleId
+
+}
+```
+
+</p></details>
+
 Next we need to add this module to the Component:
 
 ```java
 @Component(dependencies = ApplicationComponent.class, modules = ArticleDetailsModule.class)
 public interface ArticleDetailsComponent {
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Component(dependencies = [ApplicationComponent::class], modules = [ArticleDetailsModule::class])
+interface ArticleDetailsComponent {
+```
+
+</p></details>
 
 When creating the Component we provide our module with arguments:
 
@@ -773,6 +1132,17 @@ ArticleDetailsComponent component = DaggerArticleDetailsComponent.builder()
     .build();
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+val component = DaggerArticleDetailsComponent.builder()
+    .applicationComponent(MyApplication.getComponent())
+    .articleDetailsModule(ArticleDetailsModule(articleId))
+    .build();
+```
+
+</p></details>
+
 Now we can get our identifier through constructor:
 
 ```java
@@ -782,6 +1152,17 @@ public UserFollowersPresenter(ArticleDetailsInteractor interactor, long articleI
     this.articleId = articleId;
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class UserFollowersPresenter @Inject constructor(
+        private val interactor: ArticleDetailsInteractor,
+        private val articleId: Long
+)
+```
+
+</p></details>
 
 Let's suppose that in addition an article ID, we want to pass an user ID, that also has type "long". If we try to create another provide-method in our module, Dagger will give an error message, because it doesn't know which method provides an user ID or an article ID.
 
@@ -801,6 +1182,20 @@ public @interface UserId {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ArticleId
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class UserId
+```
+
+</p></details>
+
 Add annotations to our provide-methods:
 
 ```java
@@ -819,11 +1214,39 @@ long provideUserId() {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@ArticleId
+@Provides
+@Presenter
+fun provideArticleId() = articleId
+
+@UserId
+@Provides
+@Presenter
+fun provideUserId() = userId
+```
+
+</p></details>
+
 Also, we need to mark the constructor arguments with annotations:
 
 ```java
 @Inject
 public UserFollowersPresenter(ArticleDetailsInteractor interactor, @ArticleId long articleId, @UserId long userId) 
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class UserFollowersPresenter @Inject constructor(
+        private val interactor: ArticleDetailsInteractor,
+        @ArticleId private val articleId: Long,
+        @UserId private val userId: Long
+)
+```
+
+</p></details>
 
 Done. Now Dagger can pass the arguments correctly.
