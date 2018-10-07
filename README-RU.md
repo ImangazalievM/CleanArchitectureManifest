@@ -49,8 +49,6 @@ Clean Architecture включает в себя два основных прин
 Суть принципа заключается в разделении всего кода приложения на слои. Всего мы имеем три слоя: 
 
 - слой отображения
-
-
 - слой бизнес логики
 - слой работы с данными
 
@@ -147,6 +145,26 @@ public class RegisterUserInteractor {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class RegisterUserInteractor(
+        private val userRepository: UserRepository,
+        private val registerDataValidator: RegisterDataValidator,
+        private val schedulersProvider: SchedulersProvider
+) {
+
+    fun execute(userData: User): Single<RegisterResult> {
+        return registerDataValidator.validate(userData)
+                .flatMap { userData -> userRepository.registerUser(userData) }
+                .subscribeOn(schedulersProvider.io())
+    }
+
+}
+```
+
+</p></details>
+
 Однако практика показывает, что при таком подходе получается огромное количество классов, с малым количеством кода. Более правильным будет создание одного Interactor'а на один экран, методы которого реализуют определенный сценарий, например:
 
 ```java
@@ -173,6 +191,29 @@ public class ArticleDetailsInteractor {
   
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticleDetailsInteractor(
+        private val articlesRepository: ArticlesRepository,
+        private val schedulersProvider: SchedulersProvider
+) {
+
+    fun getArticleDetails(articleId: Long): Single<Article> {
+        return articlesRepository.getArticleDetails(articleId)
+                .subscribeOn(schedulersProvider.io())
+    }
+
+    fun addArticleToFavorite(articleId: Long, isFavorite: Boolean): Completable {
+        return articlesRepository.addArticleToFavorite(articleId, isFavorite)
+                .subscribeOn(schedulersProvider.io())
+    }
+
+}
+```
+
+</p></details>
 
 Как видите иногда методы Interactor'а могут и вовсе не содержать бизнес-логики, а методы Interactor'а выступают в качестве прослойки между Repository и Presenter'ом.
 
@@ -212,6 +253,24 @@ public interface ArticleRepository {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface ArticleRepository {
+
+    fun getArticle(articleId: String): Single<Article>
+    
+    fun getLastNews(): Single<List<Article>>
+
+    fun getCategoryArticles(categoryId: String): Single<List<Article>>
+
+    fun getRelatedPosts(articleId: String): Single<List<Article>>
+
+}
+```
+
+</p></details>
+
 ### Слой отображения (Presentation)
 
 ![PresentationLayer](https://raw.githubusercontent.com/ImangazalievM/CleanArchitectureManifest/master/images/PresentationLayer.png)
@@ -237,6 +296,20 @@ public interface ArticlesListView extends MvpView {
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface ArticlesListView : MvpView {
+
+    fun showLoadingProgress(show: Boolean)
+    fun showArticles(articles: List<Article>)
+    fun showArticlesLoadingErrorMessage()
+
+}
+```
+
+</p></details>
 
 Пока мы описали лишь интерфейс View, т. е. какие команды Presenter может отдавать View. Обратите внимание, что наш интерфейс наследуется от интерфейса **MvpView**, входящего в библиотеку Moxy. Это является обязательным условием для корректной работы библиотеки.
 
@@ -278,6 +351,41 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@InjectViewState
+class ArticlesListPresenter @Inject constructor(
+        private val articlesListInteractor: ArticlesListInteractor,
+        private val schedulersProvider: SchedulersProvider
+) : MvpPresenter<ArticlesListView>() {
+
+    init {
+        loadArticles()
+    }
+
+    private fun loadArticles() {
+        viewState.showLoadingProgress(true)
+        articlesListInteractor.getArticles()
+                .observeOn(schedulersProvider.ui())
+                .subscribe(
+                        { articles ->
+                            getViewState().showLoadingProgress(false)
+                            getViewState().showArticles(articles)
+                        },
+                        { throwable -> getViewState().showLoadingError() }
+                )
+    }
+
+    fun onArticleSelected(article: Article) {
+        ...
+    }
+
+}
+```
+
+</p></details>
+
 Все необходимые классы для работы Presenter'а (как и всех остальных классов) мы передаем через конструктор. Этот способ так и называется - внедрение через конструктор.
 
 При создании объекта Presenter'а мы должны передать ему запрашиваемые конструктором зависимости. Если их будет много, то создание Presenter'а будет довольно сложным делом. Чтобы не делать этого вручную, мы доверим это дело Component'у. 
@@ -292,6 +400,20 @@ public interface ArticlesListComponent {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Presenter
+@Component(dependencies = ApplicationComponent::class)
+interface ArticlesListComponent {
+
+    val getPresenter() : ArticlesListPresenter
+
+}
+```
+
+</p></details>
+
 Он подставит нужные зависимости, а нам нужно будет лишь получить инстанс Presenter'а вызвав  метод **getPresenter()**. Если у вас возник вопрос "А как в таком случае передавать  аргументы в Presenter?", то загляните в FAQ - там подробно описан этот вопрос.
 
 Иногда можно встретить такое, что в конструктор передается DI-контейнер (Component), после чего все необходимые зависимости внедряются в поля:
@@ -305,6 +427,19 @@ public VisitsPresenter(ArticlesListPresenterComponent component) {
 }
 
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Inject
+lateinit var articlesListInteractor: ArticlesListInteractor
+
+init {
+    component.inject(this)
+}
+```
+
+</p></details>
 
 Однако, данный способ является неправильным, т. к. усложняет тестирование класса и создает кучу ненужного кода. Если в первом случае мы сразу могли передать mock'и классов через конструктор, то теперь нам нужно создать DI-контейнер и передавать его. Также данный способ делает класс зависимым от конкретного DI-фреймворка, что тоже не есть хорошо.
 
@@ -345,6 +480,41 @@ public class ArticlesListActivity extends MvpAppCompatActivity implements Articl
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticlesListActivity : MvpAppCompatActivity(), ArticlesListView {
+
+    @InjectPresenter
+    lateinit var presenter: ArticlesListPresenter
+
+    @ProvidePresenter
+    fun provideArticlesListPresenter(): ArticlesListPresenter {
+        val component = DaggerArticlesListPresenterComponent.builder()
+                .applicationcomponent(MyApplication.getComponent())
+                .build()
+        return component.getPresenter()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_articles_list)
+
+    }
+
+    override fun showArticles(articles: List<Article>) {
+       ...
+    }
+
+    override fun showLoadingError() {
+       ...
+    }
+
+}
+```
+
+</p></details>
 
 Хочу заметить, что для правильной работы библиотеки Moxy, наша Activity должна обязательно наследоваться от класса **MvpAppCompatActivity** (или **MvpAppCompatFragment** в случае, если вы используете фрагменты). С помощью аннотации ```@InjectPresenter``` мы сообщаем Annotation Processor'у в какую переменную нужно "положить" Presenter. 
 
@@ -466,6 +636,25 @@ public class ArticleDbModelMapper {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticleDbModelMapper {
+
+	fun map(model: ArticleDbModel) =
+         Article(
+                 name = model.name,
+                 lastname = model.lastname,
+                 age = model.age
+         )
+    
+    fun map(models: Collection<ArticleDbModel>) = models.map { map(it) }
+
+}
+```
+
+</p></details>
+
 Т. к. слой **domain** ничего не знает о классах других слоев, то маппинг моделей должен выполняться во внешних слоях, т. е. репозиторием (при конвертации **data** > **domain** или **domain** > **data**) или презентером (при конвертации **domain** > **presentation** и наоборот) .
 
 #### ResourceManager
@@ -481,6 +670,20 @@ public interface ResourceManager {
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface ResourceManager {
+
+    fun getString(resourceId: Int): String
+
+    fun getInteger(resourceId: Int): Int
+
+}
+```
+
+</p></details>
 
 Сам интерфейс должен располагаться в слое **domain**. После этого в слое **presentation** мы создаем реализацию нашего интерфейса:
 
@@ -507,6 +710,26 @@ public class AndroidResourceManager implements ResourceManager {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class AndroidResourceManager @Inject constructor(
+        private val context: Context
+) : ResourceManager {
+
+    override fun getString(resourceId: Int): String {
+        return context.resources.getString(resourceId)
+    }
+
+    override fun getInteger(resourceId: Int): Int {
+        return context.resources.getInteger(resourceId)
+    }
+
+}
+```
+
+</p></details>
+
 Далее мы должны связать интерфейс и реализацию нашего ResourceManager'а в ApplicationModule:
 
 ```java
@@ -516,6 +739,16 @@ protected ResourceManager provideResourceManager(AndroidResourceManager resource
     return resourceManager
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Singleton
+@Provides
+fun  provideResourceManager(resourceManager: AndroidResourceManager) : ResourceManager = resourceManager
+```
+
+</p></details>
 
 Теперь мы можем использовать ResourceManager в Presenter'е или Interactor'ах:
 
@@ -539,6 +772,25 @@ public class ArticlesListPresenter extends MvpPresenter<ArticlesListView> {
     
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@InjectViewState
+class ArticlesListPresenter @Inject constructor(
+	private val resourceManager: AndroidResourceManager
+) : MvpPresenter<ArticlesListView>() {
+    
+    private fun onLoadError(throwable: Throwable) {
+        ...
+        
+		viewState.showMessage(resourceManager.getString(R.string.articles_load_error))
+    }
+
+}
+```
+
+</p></details>
 
 Наверное, у внимательных читателей возник вопрос: почему мы используем класс **R** в Presenter'е? Ведь он также относится к Android? На самом деле, это не совсем так. Класс **R** вообще не использует никакие классы, и представляет из себя набор идентификаторов ресурсов. Поэтому, нет ничего плохого, чтобы использовать его в Presenter'е.
 
@@ -575,6 +827,22 @@ public class SchedulersProvider {
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+open class SchedulersProvider @Inject constructor() {
+
+    open fun ui(): Scheduler = AndroidSchedulers.mainThread()
+    open fun computation(): Scheduler = Schedulers.computation()
+    open fun io(): Scheduler = Schedulers.io()
+    open fun newThread(): Scheduler = Schedulers.newThread()
+    open fun trampoline(): Scheduler = Schedulers.trampoline()
+
+}
+```
+
+</p></details>
 
 Благодаря этому мы можем легко заменить Scheduler'ы на нужные нам, всего лишь создав наследника класса SchedulersProvider'а и переопределив методы:
 
@@ -614,6 +882,24 @@ public class TestSchedulersProvider extends SchedulersProvider {
 
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class TestSchedulerProvider : SchedulersProvider() {
+
+    val testScheduler = TestScheduler()
+
+    override fun ui(): Scheduler = testScheduler
+    override fun computation(): Scheduler = testScheduler
+    override fun io(): Scheduler = testScheduler
+    override fun newThread(): Scheduler = testScheduler
+    override fun trampoline(): Scheduler = testScheduler
+
+}
+```
+
+</p></details>
 
 Далее, при самом тестировании, нам нужно будет лишь использовать TestSchedulersProvider вместо SchedulersProvider. Более подробно о тестировании кода с RxJava можно почитать [здесь](https://github.com/Froussios/Intro-To-RxJava/blob/master/Part%204%20-%20Concurrency/2.%20Testing%20Rx.md).
 
@@ -681,6 +967,36 @@ public class ArticlesListPresenterTest {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class ArticlesListPresenterTest {
+
+    @Test
+    fun shouldLoadArticlesOnViewAttached() {
+        //preparing
+        val interactor = Mockito.mock(ArticlesListInteractor::class.java)
+        val schedulers = TestSchedulersProvider()
+        val presenter = ArticlesListPresenter(interactor, schedulers)
+        val view = Mockito.mock(ArticlesListView::class.java)
+
+        val articlesList = ArrayList<Article>
+        `when`(interactor.getArticlesList()).thenReturn(Single.just(articlesList))
+
+        //testing
+        presenter.attachView(view)
+
+        //asserting
+        verify(view, times(1)).showLoadingProgress(true)
+        verify(view, times(1)).showLoadingProgress(false)
+        verify(view, times(1)).showArticles(articlesList)
+    }
+
+}
+```
+
+</p></details>
+
 Как видите, мы разделили код теста на три части:
 
 - Подготовка к тестированию. Здесь мы инициализируем объекты для тестирования, подготавливаем тестовые данные, а также предопределяем поведение моков.
@@ -733,12 +1049,29 @@ public class ArticlesListPresenterTest {
 public interface LoginPresenter {
 
   void onLoginButtonPressed(String email, String password);
+  
 }
 
 public class LoginPresenterImpl implements LoginPresenter {  
   ...
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+interface LoginPresenter {
+
+	fun onLoginButtonPressed(email: String, password: String)
+  
+}
+
+class LoginPresenterImpl : LoginPresenter {
+	...
+}
+```
+
+</p></details>
 
 Нет, интерфейсы для презентера и интерактора создавать не нужно. Это создает дополнительные сложности при разработке, при этом пользы от данного подхода практически нет. Вот лишь некоторые проблемы, которые порождает создание лишних интерфейсов:
 
@@ -775,12 +1108,36 @@ public class ArticleDetailsModule {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Module
+class ArticleDetailsModule(val articleId: Long) {
+
+    @Provides
+    @Presenter
+    fun provideArticleId() = articleId
+
+}
+```
+
+</p></details>
+
 Далее нам нужно добавить наш модуль в Component:
 
 ```java
 @Component(dependencies = ApplicationComponent.class, modules = ArticleDetailsModule.class)
 public interface ArticleDetailsComponent {
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Component(dependencies = [ApplicationComponent::class], modules = [ArticleDetailsModule::class])
+interface ArticleDetailsComponent {
+```
+
+</p></details>
 
 При создании Component'а мы должны передать наш модуль с идентификатором:
 
@@ -793,6 +1150,17 @@ ArticleDetailsComponent component = DaggerArticleDetailsComponent.builder()
     .build();
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+val component = DaggerArticleDetailsComponent.builder()
+    .applicationComponent(MyApplication.getComponent())
+    .articleDetailsModule(ArticleDetailsModule(articleId))
+    .build();
+```
+
+</p></details>
+
 Теперь мы можем получить наш идентификатор через конструктор:
 
 ```java
@@ -802,6 +1170,17 @@ public UserFollowersPresenter(ArticleDetailsInteractor interactor, long articleI
     this.articleId = articleId;
 }
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class UserFollowersPresenter @Inject constructor(
+        private val interactor: ArticleDetailsInteractor,
+        private val articleId: Long
+)
+```
+
+</p></details>
 
 Теперь представим, что помимо идентфикатора статьи, мы хотим передать ID пользователя, который так же имеет тип long. Если мы попытаемся создать ещё один provide-метод в нашем модуле, Dagger выдаст ошибку, о том, что типы совпадают и он не знает какой из них является идентфикатором статьи, а какой идентфикатором пользователя. 
 
@@ -821,6 +1200,20 @@ public @interface UserId {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ArticleId
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class UserId
+```
+
+</p></details>
+
 Добавляем аннотации к нашим provide-методам:
 
 ```java
@@ -839,11 +1232,39 @@ long provideUserId() {
 }
 ```
 
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+@ArticleId
+@Provides
+@Presenter
+fun provideArticleId() = articleId
+
+@UserId
+@Provides
+@Presenter
+fun provideUserId() = userId
+```
+
+</p></details>
+
 Также нужно пометить аннотациями аргументы конструктора:
 
 ```java
 @Inject
 public UserFollowersPresenter(ArticleDetailsInteractor interactor, @ArticleId long articleId, @UserId long userId) 
 ```
+
+<details><summary><b>Kotlin version</b></summary><p>
+
+```kotlin
+class UserFollowersPresenter @Inject constructor(
+        private val interactor: ArticleDetailsInteractor,
+        @ArticleId private val articleId: Long,
+        @UserId private val userId: Long
+)
+```
+
+</p></details>
 
 Готово. Теперь Dagger сможет верно расставить аргументы в конструктор.
