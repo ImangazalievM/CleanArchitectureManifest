@@ -18,8 +18,8 @@ If you want to translate this document to your language, please visit [this page
 - Errors handling
 - [Testing](en/testing.md)
 - Start a new application development using Clean Architecture
-- [Migration project to Clean Architecture](#migration-project-to-clean-architecture)
-- [Clean Architecture FAQ](#clean-architecture-faq)
+- Migration project to Clean Architecture
+- [Clean Architecture FAQ](en/faq.md)
 
 ## Introduction
 
