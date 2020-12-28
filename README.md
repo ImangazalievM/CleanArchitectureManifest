@@ -12,7 +12,7 @@ If you want to translate this document to your language, please visit [this page
 
 ## Table of contents
 
-- [Introduction](#introduction)
+- [Introduction](en/introduction.md)
 - [Layers and Inversion of Control](en/layers_and_ioc.md)
 - [Additional entities used in practice](en/additional_entities.md)
 - Errors handling
